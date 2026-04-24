@@ -8,8 +8,16 @@ Bobster is an independent community project. It is not an official IBM project, 
 
 ## Install
 
+Use the latest published CLI without installing it globally:
+
 ```sh
-npm install -g bobster
+npx bobster@latest <command>
+```
+
+For a persistent global command:
+
+```sh
+npm install -g bobster@latest
 ```
 
 ## Quick Start
@@ -154,3 +162,5 @@ Run tests with:
 ```sh
 npm test
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full registry contribution workflow and PR checklist.

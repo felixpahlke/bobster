@@ -61,7 +61,7 @@ async function buildRegistryIndex(options: any = {}) {
         type: manifest.type,
         version: manifest.version,
         description: manifest.description,
-        license: manifest.license,
+        license: "MIT",
         tags: manifest.tags,
         path: `${typeDir}/${entry.name}`,
         files: manifest.files,

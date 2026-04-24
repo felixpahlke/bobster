@@ -12,3 +12,7 @@ The repository contains:
 - `test/`: Node test coverage for CLI behavior.
 
 Bobster is an independent community project. It is not an official IBM project, product, or distribution.
+
+## Extra Info
+
+It is possible that multiple agents will be working on this project in parallel - if you notice changes on files that you also touched, do not revert other functionality that has been added by someone else.

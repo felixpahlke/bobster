@@ -4,9 +4,11 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { parseArgv } = require("./args");
+const { PACKAGE_ROOT } = require("./constants");
 const { BobsterError } = require("./error");
 const { commandHelpText, helpText } = require("./help");
 const { createTheme } = require("./theme");
+const { checkForUpdate } = require("./update-check");
 const { runAdd } = require("./commands/add");
 const { runInfo } = require("./commands/info");
 const { runInit } = require("./commands/init");
@@ -32,9 +34,44 @@ function createDefaultIo() {
 
 function packageVersion() {
   const packageJson = JSON.parse(
-    fs.readFileSync(path.resolve(__dirname, "..", "..", "package.json"), "utf8"),
+    fs.readFileSync(path.join(PACKAGE_ROOT, "package.json"), "utf8"),
   );
   return packageJson.version;
+}
+
+function shouldCheckForUpdates(parsed, io, options) {
+  if (options.updateCheck === false || process.env.BOBSTER_NO_UPDATE_CHECK || process.env.CI) {
+    return false;
+  }
+  if (parsed.flags.json || parsed.flags.version || parsed.flags.help || parsed.command === "help") {
+    return false;
+  }
+  if (!options.updateCheck?.force && fs.existsSync(path.join(PACKAGE_ROOT, ".git"))) {
+    return false;
+  }
+  return Boolean(io.stderr && io.stderr.isTTY);
+}
+
+async function maybeSuggestUpdate(parsed, io, theme, options) {
+  if (!shouldCheckForUpdates(parsed, io, options)) {
+    return;
+  }
+
+  let update;
+  try {
+    update = await checkForUpdate({
+      ...options.updateCheck,
+      currentVersion: packageVersion(),
+    });
+  } catch (error) {
+    return;
+  }
+  if (!update) {
+    return;
+  }
+
+  io.err(theme.warn(`Update available: bobster ${update.currentVersion} -> ${update.latestVersion}`));
+  io.err(`Run ${theme.id("npm install -g bobster@latest")} to update, or use ${theme.id("npx bobster@latest <command>")}.`);
 }
 
 async function main(argv: string[], options: any = {}) {
@@ -109,6 +146,8 @@ async function main(argv: string[], options: any = {}) {
     default:
       throw new BobsterError(`Unknown command: ${parsed.command}\n\n${helpText(theme)}`);
   }
+
+  await maybeSuggestUpdate(parsed, io, theme, options);
 
   return 0;
 }

@@ -3,7 +3,6 @@
   "type": "mode",
   "version": "0.1.0",
   "description": "Plan first, surface tradeoffs, and keep implementation steps explicit.",
-  "license": "MIT",
   "tags": ["planning", "architecture", "workflow"],
   "files": ["mode.yaml"],
   "entry": "mode.yaml"

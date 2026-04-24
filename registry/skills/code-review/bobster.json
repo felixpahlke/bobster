@@ -3,7 +3,6 @@
   "type": "skill",
   "version": "0.1.0",
   "description": "Review changes for bugs, regressions, missing tests, and maintainability risks.",
-  "license": "MIT",
   "tags": ["review", "quality", "testing"],
   "files": ["SKILL.md"],
   "entry": "SKILL.md"

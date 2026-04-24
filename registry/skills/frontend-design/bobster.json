@@ -3,7 +3,6 @@
   "type": "skill",
   "version": "0.1.0",
   "description": "Create distinctive, production-grade frontend interfaces with high design quality.",
-  "license": "MIT",
   "tags": ["frontend", "design", "ui", "react"],
   "files": ["SKILL.md"],
   "entry": "SKILL.md"

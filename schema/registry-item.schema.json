@@ -4,7 +4,7 @@
   "title": "Bobster registry item",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "type", "version", "description", "license", "tags", "files", "entry"],
+  "required": ["name", "type", "version", "description", "tags", "files", "entry"],
   "properties": {
     "name": {
       "type": "string",
@@ -19,10 +19,6 @@
     "description": {
       "type": "string",
       "minLength": 12
-    },
-    "license": {
-      "type": "string",
-      "minLength": 1
     },
     "tags": {
       "type": "array",

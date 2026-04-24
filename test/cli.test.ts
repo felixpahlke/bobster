@@ -8,6 +8,7 @@ const path = require("node:path");
 const { promisify } = require("node:util");
 const test = require("node:test");
 const { main } = require("../src/cli");
+const { validateManifest } = require("../src/registry/schemas");
 
 const execFileAsync = promisify(execFile);
 const repoRoot = path.resolve(__dirname, "..", "..");
@@ -24,7 +25,7 @@ async function cli(cwd: string, args: string[], options: any = {}) {
   const io = {
     color: Boolean(options.color),
     stdin: { isTTY: false },
-    stderr: { write() {} },
+    stderr: { isTTY: Boolean(options.stderrTty), write() {} },
     out(message = "") {
       stdout.push(message);
     },
@@ -32,7 +33,7 @@ async function cli(cwd: string, args: string[], options: any = {}) {
       stderr.push(message);
     },
   };
-  await main(args, { color: options.color, cwd, io });
+  await main(args, { color: options.color, cwd, io, updateCheck: options.updateCheck });
   return {
     stderr: stderr.join("\n"),
     stdout: stdout.join("\n"),
@@ -66,7 +67,6 @@ async function writeBundledRuleRegistry(cwd: string) {
             type: "rule",
             version: "0.1.0",
             description: "A bundled rule with supporting markdown references.",
-            license: "MIT",
             tags: ["rules", "bundle"],
             path: "rules/bundled-rule",
             files: ["RULE.md", "references/details.md"],
@@ -150,6 +150,62 @@ test("terminal output is styled when color is enabled and JSON stays plain", asy
   assert.doesNotMatch(json.stdout, /\x1b\[/);
   const parsed = JSON.parse(json.stdout);
   assert.equal(parsed.some((item) => item.name === "frontend-design"), true);
+});
+
+test("registry manifests reject obsolete per-item license metadata", () => {
+  assert.throws(
+    () =>
+      validateManifest({
+        name: "licensed-item",
+        type: "rule",
+        version: "0.1.0",
+        description: "A rule that still has old license metadata.",
+        license: "MIT",
+        tags: ["rules"],
+        files: ["RULE.md"],
+        entry: "RULE.md",
+      }),
+    /license is not allowed/,
+  );
+});
+
+test("interactive global-style runs suggest package updates without changing stdout", async () => {
+  const cwd = await tempProject();
+  const output = await cli(cwd, ["list", "--registry", registryPath], {
+    stderrTty: true,
+    updateCheck: {
+      cacheFile: path.join(cwd, "update-cache.json"),
+      fetchLatestVersion: async () => "99.0.0",
+      force: true,
+      now: () => 1000,
+    },
+  });
+
+  assert.match(output.stdout, /frontend-design/);
+  assert.match(output.stderr, /Update available: bobster 0\.1\.0 -> 99\.0\.0/);
+  assert.match(output.stderr, /npm install -g bobster@latest/);
+  assert.match(output.stderr, /npx bobster@latest <command>/);
+});
+
+test("update checks are skipped for JSON output", async () => {
+  const cwd = await tempProject();
+  let fetched = false;
+  const output = await cli(cwd, ["list", "--registry", registryPath, "--json"], {
+    stderrTty: true,
+    updateCheck: {
+      cacheFile: path.join(cwd, "update-cache.json"),
+      fetchLatestVersion: async () => {
+        fetched = true;
+        return "99.0.0";
+      },
+      force: true,
+      now: () => 1000,
+    },
+  });
+
+  assert.equal(fetched, false);
+  assert.equal(output.stderr, "");
+  JSON.parse(output.stdout);
 });
 
 test("add installs skill, rule, and mode and writes a lockfile", async () => {

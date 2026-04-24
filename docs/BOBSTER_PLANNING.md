@@ -229,9 +229,8 @@ Skill example:
   "type": "skill",
   "version": "0.1.0",
   "description": "Create distinctive, production-grade frontend interfaces with high design quality.",
-  "license": "MIT",
   "tags": ["frontend", "design", "ui"],
-  "files": ["SKILL.md", "LICENSE.txt"],
+  "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }
 ```
@@ -244,7 +243,6 @@ Rule example:
   "type": "rule",
   "version": "0.1.0",
   "description": "Rules for building maintainable React interfaces.",
-  "license": "MIT",
   "tags": ["react", "frontend", "quality"],
   "files": ["RULE.md"],
   "entry": "RULE.md"
@@ -259,7 +257,6 @@ Mode example:
   "type": "mode",
   "version": "0.1.0",
   "description": "A direct, simple communication mode for Bob.",
-  "license": "MIT",
   "tags": ["communication", "simple"],
   "files": ["mode.yaml"],
   "entry": "mode.yaml"
@@ -274,7 +271,6 @@ Manifest rules:
 - `files` must not contain absolute paths.
 - `files` must not contain `..`.
 - `entry` must be included in `files`.
-- A license must be declared.
 - A useful description is required because it powers search.
 
 ## Generated Registry Index
@@ -295,7 +291,7 @@ Example `registry/index.json`:
       "license": "MIT",
       "tags": ["frontend", "design", "ui"],
       "path": "skills/frontend-design",
-      "files": ["SKILL.md", "LICENSE.txt"],
+      "files": ["SKILL.md"],
       "entry": "SKILL.md"
     }
   ]
@@ -823,7 +819,6 @@ Every registry item should include:
 
 - Clear name
 - Description optimized for discovery
-- License
 - Tags
 - Minimal files
 - No secrets

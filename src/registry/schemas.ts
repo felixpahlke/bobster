@@ -12,6 +12,8 @@ const TYPE_ALIASES = {
   modes: "mode",
   mode: "mode",
 };
+const MANIFEST_FIELDS = new Set(["name", "type", "version", "description", "tags", "files", "entry"]);
+const INDEX_FIELDS = new Set([...MANIFEST_FIELDS, "license", "path"]);
 
 function normalizeType(type) {
   const normalized = TYPE_ALIASES[String(type || "").toLowerCase()];
@@ -25,11 +27,18 @@ function isKebabCase(value) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 }
 
-function validateManifest(manifest) {
+function validateManifest(manifest, options: any = {}) {
   const errors = [];
 
   if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
     throw new BobsterError("Registry manifest must be an object.");
+  }
+
+  const allowedFields = options.allowPath ? INDEX_FIELDS : MANIFEST_FIELDS;
+  for (const key of Object.keys(manifest)) {
+    if (!allowedFields.has(key)) {
+      errors.push(`${key} is not allowed`);
+    }
   }
 
   if (!manifest.name || !isKebabCase(manifest.name)) {
@@ -42,7 +51,7 @@ function validateManifest(manifest) {
     errors.push("type must be one of skill, rule, or mode");
   }
 
-  for (const field of ["version", "description", "license", "entry"]) {
+  for (const field of ["version", "description", "entry"]) {
     if (!manifest[field] || typeof manifest[field] !== "string") {
       errors.push(`${field} is required`);
     }
@@ -90,7 +99,7 @@ function validateIndex(index) {
 
   const seen = new Set();
   for (const item of index.items) {
-    validateManifest(item);
+    validateManifest(item, { allowPath: true });
 
     if (!item.path || typeof item.path !== "string") {
       throw new BobsterError(`Registry item ${item.type}/${item.name} is missing path.`);

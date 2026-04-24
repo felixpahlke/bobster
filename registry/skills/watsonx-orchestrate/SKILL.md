@@ -7,6 +7,8 @@ description: explains how to work with watsonx-orchestrate (also: wxo, orchestra
 
 Use the `uv run orchestrate` command. It is the CLI for interacting with watsonx Orchestrate.
 
+For this to be possible, you need a pyproject.toml file in the current directory, with ibm-watsonx-orchestrate installed.
+
 First activate the correct environment in Orchestrate.
 
 Feel free to import `WXO_API_KEY` and `WXO_ENV_NAME` from `.env` and pass them to the ADK to authenticate.
