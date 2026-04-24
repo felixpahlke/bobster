@@ -4,8 +4,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 
-const PACKAGE_NAME = "bobster";
-const NPM_LATEST_URL = `https://registry.npmjs.org/${PACKAGE_NAME}/latest`;
+const DEFAULT_PACKAGE_NAME = "bobster-cli";
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 1000;
 
@@ -94,8 +93,8 @@ function cacheRoot() {
   return path.join(os.homedir(), ".cache");
 }
 
-function defaultCacheFile() {
-  return path.join(cacheRoot(), PACKAGE_NAME, "update-check.json");
+function defaultCacheFile(packageName = DEFAULT_PACKAGE_NAME) {
+  return path.join(cacheRoot(), packageName, "update-check.json");
 }
 
 async function readCache(cacheFile) {
@@ -120,15 +119,17 @@ async function fetchLatestVersion(options: any = {}) {
     return null;
   }
 
+  const packageName = options.packageName || DEFAULT_PACKAGE_NAME;
+  const latestUrl = `https://registry.npmjs.org/${encodeURIComponent(packageName)}/latest`;
   const timeoutMs = options.timeoutMs || FETCH_TIMEOUT_MS;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(NPM_LATEST_URL, {
+    const response = await fetch(latestUrl, {
       headers: {
         accept: "application/json",
-        "user-agent": `${PACKAGE_NAME}/${options.currentVersion || "unknown"}`,
+        "user-agent": `${packageName}/${options.currentVersion || "unknown"}`,
       },
       signal: controller.signal,
     });
@@ -147,7 +148,8 @@ async function fetchLatestVersion(options: any = {}) {
 
 async function checkForUpdate(options: any = {}) {
   const currentVersion = options.currentVersion;
-  const cacheFile = options.cacheFile || defaultCacheFile();
+  const packageName = options.packageName || DEFAULT_PACKAGE_NAME;
+  const cacheFile = options.cacheFile || defaultCacheFile(packageName);
   const now = options.now ? options.now() : Date.now();
   const intervalMs = options.intervalMs || CHECK_INTERVAL_MS;
   const cached = await readCache(cacheFile);
@@ -158,7 +160,7 @@ async function checkForUpdate(options: any = {}) {
 
   const latestVersion = options.fetchLatestVersion
     ? await options.fetchLatestVersion()
-    : await fetchLatestVersion({ currentVersion, timeoutMs: options.timeoutMs });
+    : await fetchLatestVersion({ currentVersion, packageName, timeoutMs: options.timeoutMs });
 
   await writeCache(cacheFile, {
     checkedAt: now,

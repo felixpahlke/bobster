@@ -85,28 +85,25 @@ Bobster ships shell completion scripts for commands, flags, `--type` values, reg
 For zsh:
 
 ```sh
-mkdir -p ~/.zfunc
-ln -sf "$(npm root -g)/bobster-cli/completions/_bobster" ~/.zfunc/_bobster
-```
-
-Then make sure `~/.zfunc` is on `fpath` and `compinit` is enabled in your shell config:
-
-```sh
-fpath=(~/.zfunc $fpath)
-autoload -Uz compinit && compinit
+bobster completion install zsh
 ```
 
 For bash:
 
 ```sh
-source "$(npm root -g)/bobster-cli/completions/bobster.bash"
+bobster completion install bash
 ```
 
 For fish:
 
 ```sh
-mkdir -p ~/.config/fish/completions
-ln -sf "$(npm root -g)/bobster-cli/completions/bobster.fish" ~/.config/fish/completions/bobster.fish
+bobster completion install fish
+```
+
+To print a hook without installing it:
+
+```sh
+bobster completion zsh
 ```
 
 ## Config

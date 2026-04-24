@@ -1,8 +1,13 @@
 "use strict";
 
-const { ITEM_TYPES } = require("../constants");
+const fs = require("node:fs/promises");
+const os = require("node:os");
+const path = require("node:path");
+const { ITEM_TYPES, PACKAGE_ROOT } = require("../constants");
 const { loadConfig } = require("../config/load-config");
+const { BobsterError } = require("../error");
 const { readLockfile } = require("../lockfile/lockfile");
+const { confirm } = require("../prompt");
 const { fetchRegistryIndex } = require("../registry/fetch-index");
 const { normalizeType } = require("../registry/schemas");
 
@@ -16,15 +21,20 @@ const COMMANDS = [
   "remove",
   "forget",
   "update",
+  "completion",
   "registry",
   "registry:build",
   "registry:validate",
   "help",
 ];
 
+const SUPPORTED_SHELLS = ["zsh", "bash", "fish"];
+const COMPLETION_SUBCOMMANDS = ["install", ...SUPPORTED_SHELLS];
 const REGISTRY_SUBCOMMANDS = ["build", "validate"];
 const GLOBAL_FLAGS = ["--help", "--version"];
 const VALUE_FLAGS = new Set(["--target", "--registry", "--type", "--base-url"]);
+const MANAGED_START = "# >>> bobster completion >>>";
+const MANAGED_END = "# <<< bobster completion <<<";
 
 const COMMAND_FLAGS = {
   init: ["--target", "--registry", "--yes", "--force", "--dry-run", "--json", "--help"],
@@ -36,11 +46,199 @@ const COMMAND_FLAGS = {
   remove: ["--type", "--dry-run", "--yes", "--json", "--help"],
   forget: ["--dry-run", "--yes", "--json", "--help"],
   update: ["--type", "--dry-run", "--yes", "--json", "--help"],
+  completion: ["--dry-run", "--yes", "--json", "--help"],
   registry: ["--base-url", "--check", "--json", "--help"],
   "registry:build": ["--base-url", "--check", "--json", "--help"],
   "registry:validate": ["--json", "--help"],
   help: [],
 };
+
+function supportedShell(shell) {
+  return SUPPORTED_SHELLS.includes(shell);
+}
+
+function assertSupportedShell(shell) {
+  if (!supportedShell(shell)) {
+    throw new BobsterError(`Unsupported shell: ${shell}. Expected one of: ${SUPPORTED_SHELLS.join(", ")}.`);
+  }
+}
+
+function completionFileName(shell) {
+  return {
+    bash: "bobster.bash",
+    fish: "bobster.fish",
+    zsh: "_bobster",
+  }[shell];
+}
+
+async function completionScript(shell) {
+  assertSupportedShell(shell);
+  return fs.readFile(path.join(PACKAGE_ROOT, "completions", completionFileName(shell)), "utf8");
+}
+
+function homeDir() {
+  return process.env.HOME || os.homedir();
+}
+
+function displayPath(filePath) {
+  const home = homeDir();
+  return filePath === home || filePath.startsWith(`${home}${path.sep}`)
+    ? `~${filePath.slice(home.length)}`
+    : filePath;
+}
+
+function detectShell() {
+  const shell = path.basename(process.env.SHELL || "");
+  return supportedShell(shell) ? shell : null;
+}
+
+function shellConfigPath(shell) {
+  const home = homeDir();
+  if (shell === "zsh") {
+    return path.join(process.env.ZDOTDIR || home, ".zshrc");
+  }
+  if (shell === "bash") {
+    return path.join(home, ".bashrc");
+  }
+  return null;
+}
+
+function shellCompletionPath(shell) {
+  const home = homeDir();
+  if (shell === "zsh") {
+    return path.join(home, ".zfunc", "_bobster");
+  }
+  if (shell === "bash") {
+    return path.join(home, ".bobster-completion.bash");
+  }
+  return path.join(home, ".config", "fish", "completions", "bobster.fish");
+}
+
+function managedBlock(shell) {
+  if (shell === "zsh") {
+    return [
+      MANAGED_START,
+      'fpath=("$HOME/.zfunc" $fpath)',
+      "autoload -Uz compinit",
+      "compinit",
+      MANAGED_END,
+      "",
+    ].join("\n");
+  }
+
+  if (shell === "bash") {
+    return [
+      MANAGED_START,
+      'if [ -f "$HOME/.bobster-completion.bash" ]; then',
+      '  . "$HOME/.bobster-completion.bash"',
+      "fi",
+      MANAGED_END,
+      "",
+    ].join("\n");
+  }
+
+  return null;
+}
+
+async function readIfExists(filePath) {
+  try {
+    return await fs.readFile(filePath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return "";
+    }
+    throw error;
+  }
+}
+
+function upsertManagedBlock(content, block) {
+  const start = content.indexOf(MANAGED_START);
+  const end = content.indexOf(MANAGED_END);
+  if (start !== -1 && end !== -1 && end > start) {
+    return `${content.slice(0, start)}${block}${content.slice(end + MANAGED_END.length).replace(/^\n/, "")}`;
+  }
+
+  const prefix = content && !content.endsWith("\n") ? `${content}\n\n` : content ? `${content}\n` : "";
+  return `${prefix}${block}`;
+}
+
+async function completionInstallPlan(shell) {
+  assertSupportedShell(shell);
+  return {
+    configBlock: managedBlock(shell),
+    configPath: shellConfigPath(shell),
+    script: await completionScript(shell),
+    scriptPath: shellCompletionPath(shell),
+    shell,
+  };
+}
+
+function formatCompletionInstallPlan(plan) {
+  const lines = [
+    "Completion install plan:",
+    `  shell: ${plan.shell}`,
+    `  write: ${displayPath(plan.scriptPath)}`,
+  ];
+  if (plan.configPath && plan.configBlock) {
+    lines.push(`  update: ${displayPath(plan.configPath)}`);
+  }
+  return lines.join("\n");
+}
+
+async function installCompletion(context) {
+  const shell = context.args[1] || detectShell();
+  if (!shell) {
+    throw new BobsterError(`Could not detect shell. Run bobster completion install <${SUPPORTED_SHELLS.join("|")}>.`);
+  }
+
+  const plan = await completionInstallPlan(shell);
+  if (context.flags.json) {
+    context.io.out(
+      JSON.stringify(
+        {
+          configPath: plan.configPath,
+          scriptPath: plan.scriptPath,
+          shell: plan.shell,
+        },
+        null,
+        2,
+      ),
+    );
+  } else {
+    context.io.out(formatCompletionInstallPlan(plan));
+  }
+
+  if (context.flags.dryRun) {
+    return;
+  }
+
+  if (!context.flags.yes) {
+    const accepted = await confirm(`Install ${shell} completion?`, {
+      input: context.io.stdin,
+      output: context.io.stderr,
+    });
+    if (!accepted) {
+      throw new BobsterError("Completion installation cancelled.");
+    }
+  }
+
+  await fs.mkdir(path.dirname(plan.scriptPath), { recursive: true });
+  await fs.writeFile(plan.scriptPath, plan.script, "utf8");
+
+  if (plan.configPath && plan.configBlock) {
+    const currentConfig = await readIfExists(plan.configPath);
+    const nextConfig = upsertManagedBlock(currentConfig, plan.configBlock);
+    if (nextConfig !== currentConfig) {
+      await fs.mkdir(path.dirname(plan.configPath), { recursive: true });
+      await fs.writeFile(plan.configPath, nextConfig, "utf8");
+    }
+  }
+
+  if (!context.flags.json) {
+    context.io.out(`Installed ${shell} completion.`);
+    context.io.out("Restart your shell or open a new terminal for changes to take effect.");
+  }
+}
 
 function toFlagName(flag) {
   return flag
@@ -285,6 +483,16 @@ async function completionSuggestions(rawWords, options: any = {}) {
     return byCurrent(COMMANDS.filter((command) => command !== "help"), current);
   }
 
+  if (parsed.command === "completion") {
+    if (parsed.args.length === 0) {
+      return byCurrent(COMPLETION_SUBCOMMANDS, current);
+    }
+    if (parsed.args[0] === "install" && parsed.args.length === 1) {
+      return byCurrent(SUPPORTED_SHELLS, current);
+    }
+    return [];
+  }
+
   if (current.startsWith("--")) {
     return commandFlags(parsed.command, current);
   }
@@ -309,7 +517,24 @@ async function runComplete(rawWords, options: any = {}) {
   options.io.out(suggestions.join("\n"));
 }
 
+async function runCompletion(context) {
+  const subcommand = context.args[0];
+
+  if (subcommand === "install") {
+    await installCompletion(context);
+    return;
+  }
+
+  if (supportedShell(subcommand)) {
+    context.io.out((await completionScript(subcommand)).trimEnd());
+    return;
+  }
+
+  throw new BobsterError(`Usage: bobster completion <${SUPPORTED_SHELLS.join("|")}> or bobster completion install [${SUPPORTED_SHELLS.join("|")}].`);
+}
+
 module.exports = {
   completionSuggestions,
   runComplete,
+  runCompletion,
 };

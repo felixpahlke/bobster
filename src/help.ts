@@ -29,6 +29,7 @@ ${commandLine("bobster info <name> [--type skill|rule|mode] [--json]", theme)}
 ${commandLine("bobster add <name> [--dry-run] [--yes] [--force] [--json]", theme)}
 ${commandLine("bobster remove <name> [--dry-run] [--yes] [--json]", theme)}
 ${commandLine("bobster update [name] [--dry-run] [--yes] [--json]", theme)}
+${commandLine("bobster completion <zsh|bash|fish|install>", theme)}
 
 Aliases:
 ${commandLine("bobster learn <skill-name>", theme)}
@@ -134,6 +135,15 @@ const COMMAND_HELP = {
       "--dry-run           Show planned writes without changing files.",
       "--yes               Apply without confirmation.",
       "--json              Print the plan as JSON.",
+    ],
+  },
+  completion: {
+    usage: "bobster completion <zsh|bash|fish|install> [shell] [options]",
+    description: "Print or install shell completion for the bobster command.",
+    options: [
+      "--dry-run           Show install paths without changing files.",
+      "--yes               Install without prompting.",
+      "--json              Print install paths as JSON.",
     ],
   },
   registry: {

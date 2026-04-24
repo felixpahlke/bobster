@@ -10,7 +10,7 @@ const { commandHelpText, helpText } = require("./help");
 const { createTheme } = require("./theme");
 const { checkForUpdate } = require("./update-check");
 const { runAdd } = require("./commands/add");
-const { runComplete } = require("./commands/completion");
+const { runComplete, runCompletion } = require("./commands/completion");
 const { runInfo } = require("./commands/info");
 const { runInit } = require("./commands/init");
 const { runList } = require("./commands/list");
@@ -33,11 +33,14 @@ function createDefaultIo() {
   };
 }
 
-function packageVersion() {
+function packageMetadata() {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(PACKAGE_ROOT, "package.json"), "utf8"),
   );
-  return packageJson.version;
+  return {
+    name: packageJson.name || "bobster-cli",
+    version: packageJson.version,
+  };
 }
 
 function shouldCheckForUpdates(parsed, io, options) {
@@ -59,10 +62,12 @@ async function maybeSuggestUpdate(parsed, io, theme, options) {
   }
 
   let update;
+  const metadata = packageMetadata();
   try {
     update = await checkForUpdate({
       ...options.updateCheck,
-      currentVersion: packageVersion(),
+      currentVersion: metadata.version,
+      packageName: metadata.name,
     });
   } catch (error) {
     return;
@@ -71,8 +76,8 @@ async function maybeSuggestUpdate(parsed, io, theme, options) {
     return;
   }
 
-  io.err(theme.warn(`Update available: bobster ${update.currentVersion} -> ${update.latestVersion}`));
-  io.err(`Run ${theme.id("npm install -g bobster@latest")} to update, or use ${theme.id("npx bobster@latest <command>")}.`);
+  io.err(theme.warn(`Update available: ${metadata.name} ${update.currentVersion} -> ${update.latestVersion}`));
+  io.err(`Run ${theme.id(`npm install -g ${metadata.name}@latest`)} to update, or use ${theme.id(`npx ${metadata.name}@latest <command>`)}.`);
 }
 
 async function main(argv: string[], options: any = {}) {
@@ -103,7 +108,7 @@ async function main(argv: string[], options: any = {}) {
   };
 
   if (parsed.flags.version) {
-    io.out(packageVersion());
+    io.out(packageMetadata().version);
     return 0;
   }
 
@@ -144,6 +149,9 @@ async function main(argv: string[], options: any = {}) {
       break;
     case "update":
       await runUpdate(context);
+      break;
+    case "completion":
+      await runCompletion(context);
       break;
     case "registry":
       await runRegistry(context);

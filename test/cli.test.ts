@@ -13,7 +13,12 @@ const { validateManifest } = require("../src/registry/schemas");
 const execFileAsync = promisify(execFile);
 const repoRoot = path.resolve(__dirname, "..", "..");
 const binPath = path.join(repoRoot, "dist", "src", "cli.js");
+const packageJson = require(path.join(repoRoot, "package.json"));
 const registryPath = path.join(repoRoot, "registry", "index.json");
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 async function tempProject() {
   return fs.mkdtemp(path.join(os.tmpdir(), "bobster-test-"));
@@ -127,6 +132,7 @@ test("help is available globally, per command, and through help <command>", asyn
   const general = await cli(cwd, ["--help"]);
   assert.match(general.stdout, /Bobster/);
   assert.match(general.stdout, /bobster <command> --help/);
+  assert.match(general.stdout, /bobster completion/);
 
   const add = await cli(cwd, ["add", "--help"]);
   assert.match(add.stdout, /Install one registry item/);
@@ -162,14 +168,56 @@ test("completion suggests registry skills and rules", async () => {
   assert.doesNotMatch(rules.stdout, /^skill\/frontend-design$/m);
 });
 
-test("completion hook files are packaged outside the public command list", async () => {
+test("completion hooks are printable and avoid filename fallback", async () => {
   const cwd = await tempProject();
-  const help = await cli(cwd, ["--help"]);
-  assert.doesNotMatch(help.stdout, /bobster completion/);
+  const zsh = await cli(cwd, ["completion", "zsh"]);
+  const bash = await cli(cwd, ["completion", "bash"]);
+  const fish = await cli(cwd, ["completion", "fish"]);
 
-  assert.match(await fs.readFile(path.join(repoRoot, "completions", "_bobster"), "utf8"), /bobster __complete/);
-  assert.match(await fs.readFile(path.join(repoRoot, "completions", "bobster.bash"), "utf8"), /bobster __complete/);
-  assert.match(await fs.readFile(path.join(repoRoot, "completions", "bobster.fish"), "utf8"), /bobster __complete/);
+  assert.match(zsh.stdout, /#compdef bobster/);
+  assert.match(zsh.stdout, /bobster __complete/);
+  assert.doesNotMatch(zsh.stdout, /_files/);
+
+  assert.match(bash.stdout, /bobster __complete/);
+  assert.doesNotMatch(bash.stdout, /-o default/);
+
+  assert.match(fish.stdout, /bobster __complete/);
+  assert.match(fish.stdout, /complete -c bobster -f/);
+});
+
+test("completion install writes shell hook and managed zsh config", async () => {
+  const cwd = await tempProject();
+  const home = await tempProject();
+  const previousHome = process.env.HOME;
+  const previousZdotdir = process.env.ZDOTDIR;
+
+  process.env.HOME = home;
+  delete process.env.ZDOTDIR;
+  try {
+    const output = await cli(cwd, ["completion", "install", "zsh", "--yes"]);
+
+    assert.match(output.stdout, /Completion install plan:/);
+    assert.match(output.stdout, /Installed zsh completion/);
+    assert.match(await fs.readFile(path.join(home, ".zfunc", "_bobster"), "utf8"), /bobster __complete/);
+    const zshrc = await fs.readFile(path.join(home, ".zshrc"), "utf8");
+    assert.match(zshrc, /# >>> bobster completion >>>/);
+    assert.match(zshrc, /fpath=\("\$HOME\/\.zfunc" \$fpath\)/);
+
+    await cli(cwd, ["completion", "install", "zsh", "--yes"]);
+    const rerunZshrc = await fs.readFile(path.join(home, ".zshrc"), "utf8");
+    assert.equal((rerunZshrc.match(/# >>> bobster completion >>>/g) || []).length, 1);
+  } finally {
+    if (previousHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = previousHome;
+    }
+    if (previousZdotdir === undefined) {
+      delete process.env.ZDOTDIR;
+    } else {
+      process.env.ZDOTDIR = previousZdotdir;
+    }
+  }
 });
 
 test("completion honors type filters and installed item commands", async () => {
@@ -235,9 +283,12 @@ test("interactive global-style runs suggest package updates without changing std
   });
 
   assert.match(output.stdout, /frontend-design/);
-  assert.match(output.stderr, /Update available: bobster 0\.1\.0 -> 99\.0\.0/);
-  assert.match(output.stderr, /npm install -g bobster@latest/);
-  assert.match(output.stderr, /npx bobster@latest <command>/);
+  assert.match(
+    output.stderr,
+    new RegExp(`Update available: ${escapeRegExp(packageJson.name)} ${escapeRegExp(packageJson.version)} -> 99\\.0\\.0`),
+  );
+  assert.match(output.stderr, new RegExp(`npm install -g ${escapeRegExp(packageJson.name)}@latest`));
+  assert.match(output.stderr, new RegExp(`npx ${escapeRegExp(packageJson.name)}@latest <command>`));
 });
 
 test("update checks are skipped for JSON output", async () => {

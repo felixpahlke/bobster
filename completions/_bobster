@@ -9,8 +9,6 @@ _bobster_completion() {
 
   if (( ${#suggestions[@]} )); then
     compadd -- "${suggestions[@]}"
-  else
-    _files
   fi
 }
 

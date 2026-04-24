@@ -10,4 +10,4 @@ _bobster_completion() {
   COMPREPLY=($(compgen -W "$suggestions" -- "${COMP_WORDS[COMP_CWORD]}"))
 }
 
-complete -o default -F _bobster_completion bobster
+complete -F _bobster_completion bobster
