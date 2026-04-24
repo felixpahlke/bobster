@@ -801,7 +801,7 @@ Recommended CI jobs:
 - Typecheck CLI
 - Run tests
 - Validate registry
-- Regenerate index and fail if changed
+- Regenerate index and report when generated files changed
 - Lint package metadata
 
 Contributor flow:
@@ -809,9 +809,10 @@ Contributor flow:
 1. Add item under `registry/<type>/<name>/`.
 2. Add `bobster.json`.
 3. Add content files.
-4. Run `npm run registry:build`.
-5. Open PR.
-6. CI validates schemas and generated index.
+4. Optionally run `npm run registry:prepare`.
+5. Open PR with the item files.
+6. Maintainers regenerate `registry/index.json` if the PR did not include it.
+7. CI validates schemas and generated index.
 
 ## Registry Contribution Guidelines
 

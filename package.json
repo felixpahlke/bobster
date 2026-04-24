@@ -1,5 +1,5 @@
 {
-  "name": "bobster",
+  "name": "@bobster/cli",
   "version": "0.1.0",
   "description": "CLI and registry for Bob skills, rules, and custom modes.",
   "license": "MIT",
@@ -21,8 +21,9 @@
     "test": "npm run build && tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js",
     "registry:build": "npm run build && node dist/src/cli.js registry build",
     "registry:validate": "npm run build && node dist/src/cli.js registry validate",
+    "registry:prepare": "npm run registry:build && node dist/src/cli.js registry validate",
     "pub:check": "npm run build && npm --cache .npm-cache pack --dry-run",
-    "pub:release": "npm --cache .npm-cache publish",
+    "pub:release": "npm --cache .npm-cache publish --access public",
     "prepare": "npm run build",
     "prepub:release": "npm run test && npm run registry:validate && npm run pub:check"
   },

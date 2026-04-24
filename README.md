@@ -11,13 +11,13 @@ Bobster is an independent community project. It is not an official IBM project, 
 Use the latest published CLI without installing it globally:
 
 ```sh
-npx bobster@latest <command>
+npx @bobster/cli@latest <command>
 ```
 
 For a persistent global command:
 
 ```sh
-npm install -g bobster@latest
+npm install -g @bobster/cli@latest
 ```
 
 ## Quick Start
@@ -150,11 +150,10 @@ registry/
   modes/<name>/
 ```
 
-Each item has a `bobster.json` manifest plus declared content files. Rebuild and validate the committed index with:
+Each item has a `bobster.json` manifest plus declared content files. Maintainers can rebuild and validate the committed index with:
 
 ```sh
-npm run registry:build
-npm run registry:validate
+npm run registry:prepare
 ```
 
 Run tests with:

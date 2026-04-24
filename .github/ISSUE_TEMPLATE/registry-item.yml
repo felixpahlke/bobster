@@ -1,0 +1,46 @@
+name: Suggest a registry item
+description: Suggest a Bob skill, rule, or custom mode for the Bobster registry.
+title: "[Registry]: "
+labels:
+  - registry
+body:
+  - type: dropdown
+    id: item-type
+    attributes:
+      label: Item type
+      options:
+        - skill
+        - rule
+        - mode
+    validations:
+      required: true
+  - type: input
+    id: item-name
+    attributes:
+      label: Suggested name
+      description: Use lowercase kebab-case if you have a name in mind.
+      placeholder: my-useful-skill
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What should it help Bob do?
+      description: Describe the use case and who would benefit from it.
+    validations:
+      required: true
+  - type: textarea
+    id: content
+    attributes:
+      label: Proposed content
+      description: Paste the skill, rule, mode, or rough draft here. It does not need to be perfectly formatted.
+      render: markdown
+    validations:
+      required: false
+  - type: textarea
+    id: source
+    attributes:
+      label: Source or licensing notes
+      description: Mention whether this is original content, adapted from somewhere, or has license constraints.
+    validations:
+      required: false

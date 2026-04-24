@@ -12,6 +12,8 @@ This project is community-maintained and independent. It is not an official IBM 
 - Improve documentation, examples, tests, or schemas.
 - Suggest registry ideas by opening an issue or draft pull request.
 
+If you are not comfortable running the project locally, open an issue with the skill, rule, or mode text you want to contribute. A maintainer can help turn it into a registry item.
+
 ## Add a Registry Item
 
 Registry items live under:
@@ -107,22 +109,29 @@ Before opening a PR, check that:
 
 Keep registry items focused. A good item should be reusable across projects, not tailored to one private codebase.
 
-## Rebuild the Registry Index
+## Optional: Prepare the Registry
 
-`registry/index.json` is generated from the item manifests. If your PR adds, removes, renames, or edits a registry item manifest, rebuild the index and commit it with your change:
+For registry contributions, the important part is the item folder:
+
+```txt
+registry/<skills|rules|modes>/<name>/
+```
+
+Including an updated `registry/index.json` is helpful, but not required. If you only add or edit the item files, maintainers can regenerate the index before merging.
+
+If you want to do the full local check, run:
 
 ```sh
 npm install
-npm run registry:build
+npm run registry:prepare
 ```
 
-Then validate the generated index:
+That command rebuilds `registry/index.json` and validates it. You can also run the steps separately:
 
 ```sh
+npm run registry:build
 npm run registry:validate
 ```
-
-Yes, contributors should normally include the updated `registry/index.json` in the PR. This keeps the published npm package and GitHub registry content in sync.
 
 You do not need to rebuild the registry index for documentation-only changes or CLI source changes that do not touch registry manifests.
 
@@ -131,7 +140,7 @@ You do not need to rebuild the registry index for documentation-only changes or 
 For registry-only changes, run:
 
 ```sh
-npm run registry:validate
+npm run registry:prepare
 ```
 
 For CLI changes, run:
@@ -175,7 +184,7 @@ Include a short PR description that explains:
 For registry PRs, include:
 
 - The new or updated item files.
-- The updated `registry/index.json`, when a manifest changed.
+- The updated `registry/index.json`, if you ran `npm run registry:prepare`.
 - Any notes about source material or licensing, if relevant.
 
 ## External Repositories
