@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-24T09:26:01.266Z",
+  "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
+  "items": [
+    {
+      "name": "grug-brained",
+      "type": "mode",
+      "version": "0.1.0",
+      "description": "A direct, simple communication mode for Bob.",
+      "license": "MIT",
+      "tags": [
+        "communication",
+        "simple",
+        "concise"
+      ],
+      "path": "modes/grug-brained",
+      "files": [
+        "mode.yaml"
+      ],
+      "entry": "mode.yaml"
+    },
+    {
+      "name": "planner",
+      "type": "mode",
+      "version": "0.1.0",
+      "description": "Plan first, surface tradeoffs, and keep implementation steps explicit.",
+      "license": "MIT",
+      "tags": [
+        "planning",
+        "architecture",
+        "workflow"
+      ],
+      "path": "modes/planner",
+      "files": [
+        "mode.yaml"
+      ],
+      "entry": "mode.yaml"
+    },
+    {
+      "name": "no-secrets",
+      "type": "rule",
+      "version": "0.1.0",
+      "description": "Prevent credentials, tokens, private keys, and sensitive local details from entering the repo.",
+      "license": "MIT",
+      "tags": [
+        "security",
+        "secrets",
+        "git"
+      ],
+      "path": "rules/no-secrets",
+      "files": [
+        "RULE.md"
+      ],
+      "entry": "RULE.md"
+    },
+    {
+      "name": "typescript-quality",
+      "type": "rule",
+      "version": "0.1.0",
+      "description": "Keep TypeScript changes typed, local, and easy to verify.",
+      "license": "MIT",
+      "tags": [
+        "typescript",
+        "quality",
+        "testing"
+      ],
+      "path": "rules/typescript-quality",
+      "files": [
+        "RULE.md"
+      ],
+      "entry": "RULE.md"
+    },
+    {
+      "name": "code-review",
+      "type": "skill",
+      "version": "0.1.0",
+      "description": "Review changes for bugs, regressions, missing tests, and maintainability risks.",
+      "license": "MIT",
+      "tags": [
+        "review",
+        "quality",
+        "testing"
+      ],
+      "path": "skills/code-review",
+      "files": [
+        "SKILL.md",
+        "LICENSE.txt"
+      ],
+      "entry": "SKILL.md"
+    },
+    {
+      "name": "frontend-design",
+      "type": "skill",
+      "version": "0.1.0",
+      "description": "Create distinctive, production-grade frontend interfaces with high design quality.",
+      "license": "MIT",
+      "tags": [
+        "frontend",
+        "design",
+        "ui",
+        "react"
+      ],
+      "path": "skills/frontend-design",
+      "files": [
+        "SKILL.md",
+        "LICENSE.txt"
+      ],
+      "entry": "SKILL.md"
+    }
+  ]
+}

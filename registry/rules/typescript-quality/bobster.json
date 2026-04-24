@@ -1,0 +1,10 @@
+{
+  "name": "typescript-quality",
+  "type": "rule",
+  "version": "0.1.0",
+  "description": "Keep TypeScript changes typed, local, and easy to verify.",
+  "license": "MIT",
+  "tags": ["typescript", "quality", "testing"],
+  "files": ["RULE.md"],
+  "entry": "RULE.md"
+}

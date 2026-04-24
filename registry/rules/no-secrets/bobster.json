@@ -1,0 +1,10 @@
+{
+  "name": "no-secrets",
+  "type": "rule",
+  "version": "0.1.0",
+  "description": "Prevent credentials, tokens, private keys, and sensitive local details from entering the repo.",
+  "license": "MIT",
+  "tags": ["security", "secrets", "git"],
+  "files": ["RULE.md"],
+  "entry": "RULE.md"
+}

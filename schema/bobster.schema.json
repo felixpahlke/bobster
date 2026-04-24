@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/felixpahlke/bobster/main/schema/bobster.schema.json",
+  "title": "Bobster project config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string",
+      "default": ".bob"
+    },
+    "registry": {
+      "type": "string"
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skills": { "type": "string" },
+        "rules": { "type": "string" },
+        "modes": { "type": "string" }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "confirmWrites": { "type": "boolean" },
+        "lockfile": { "type": "boolean" }
+      }
+    }
+  }
+}

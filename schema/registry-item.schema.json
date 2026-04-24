@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/felixpahlke/bobster/main/schema/registry-item.schema.json",
+  "title": "Bobster registry item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "type", "version", "description", "license", "tags", "files", "entry"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "type": {
+      "enum": ["skill", "rule", "mode"]
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 12
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "not": {
+          "anyOf": [
+            { "pattern": "^/" },
+            { "pattern": "(^|/)\\.\\.(/|$)" }
+          ]
+        }
+      }
+    },
+    "entry": {
+      "type": "string"
+    }
+  }
+}

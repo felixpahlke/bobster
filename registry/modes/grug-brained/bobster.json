@@ -1,0 +1,10 @@
+{
+  "name": "grug-brained",
+  "type": "mode",
+  "version": "0.1.0",
+  "description": "A direct, simple communication mode for Bob.",
+  "license": "MIT",
+  "tags": ["communication", "simple", "concise"],
+  "files": ["mode.yaml"],
+  "entry": "mode.yaml"
+}

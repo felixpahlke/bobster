@@ -1,6 +1,6 @@
 {
   "name": "bobster",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "CLI and registry for Bob skills, rules, and custom modes.",
   "license": "MIT",
   "type": "commonjs",
@@ -9,13 +9,19 @@
   },
   "files": [
     "bin",
+    "src",
+    "registry",
+    "schema",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "pub:check": "npm pack --dry-run",
-    "pub:release": "npm publish",
-    "prepub:release": "npm run pub:check"
+    "test": "node --test",
+    "registry:build": "node bin/bobster.js registry build",
+    "registry:validate": "node bin/bobster.js registry validate",
+    "pub:check": "npm --cache .npm-cache pack --dry-run",
+    "pub:release": "npm --cache .npm-cache publish",
+    "prepub:release": "npm run test && npm run registry:validate && npm run pub:check"
   },
   "keywords": [
     "bob",
@@ -28,5 +34,8 @@
   ],
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
   }
 }
