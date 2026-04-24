@@ -11,13 +11,13 @@ Bobster is an independent community project. It is not an official IBM project, 
 Use the latest published CLI without installing it globally:
 
 ```sh
-npx @bobster/cli@latest <command>
+npx bobster-cli@latest <command>
 ```
 
 For a persistent global command:
 
 ```sh
-npm install -g @bobster/cli@latest
+npm install -g bobster-cli@latest
 ```
 
 ## Quick Start
@@ -52,6 +52,7 @@ bobster info <name> [--type skill|rule|mode] [--json]
 bobster add <name> [--dry-run] [--yes] [--force] [--json]
 bobster remove <name> [--dry-run] [--yes] [--json]
 bobster update [name] [--dry-run] [--yes] [--json]
+bobster completion <bash|zsh|fish>
 ```
 
 Every command supports focused help:
@@ -77,6 +78,38 @@ bobster forget skill/frontend-design
 ```
 
 Single-file rules install as `.bob/rules/<name>.md`. Rule items with multiple files or nested paths install as `.bob/rules/<name>/...`.
+
+## Shell Completion
+
+Bobster can generate shell completion scripts for commands, flags, `--type` values, registry item names, and installed item names.
+
+For zsh:
+
+```sh
+mkdir -p ~/.zfunc
+bobster completion zsh > ~/.zfunc/_bobster
+```
+
+Then make sure `~/.zfunc` is on `fpath` and `compinit` is enabled in your shell config:
+
+```sh
+fpath=(~/.zfunc $fpath)
+autoload -Uz compinit && compinit
+```
+
+For bash:
+
+```sh
+bobster completion bash > ~/.bobster-completion.bash
+source ~/.bobster-completion.bash
+```
+
+For fish:
+
+```sh
+mkdir -p ~/.config/fish/completions
+bobster completion fish > ~/.config/fish/completions/bobster.fish
+```
 
 ## Config
 

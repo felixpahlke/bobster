@@ -139,6 +139,52 @@ test("help is available globally, per command, and through help <command>", asyn
   assert.match(registry.stdout, /build\|validate/);
 });
 
+test("completion script generation is available for supported shells", async () => {
+  const cwd = await tempProject();
+
+  const zsh = await cli(cwd, ["completion", "zsh"]);
+  assert.match(zsh.stdout, /#compdef bobster/);
+  assert.match(zsh.stdout, /bobster __complete/);
+
+  const help = await cli(cwd, ["help", "completion"]);
+  assert.match(help.stdout, /bobster completion <bash\|zsh\|fish>/);
+});
+
+test("completion suggests registry skills and rules", async () => {
+  const cwd = await tempProject();
+  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+
+  const skills = await cli(cwd, ["__complete", "--", "add", "skill/"]);
+  assert.match(skills.stdout, /^skill\/frontend-design$/m);
+  assert.match(skills.stdout, /^skill\/watsonx-orchestrate$/m);
+  assert.doesNotMatch(skills.stdout, /^rule\/no-secrets$/m);
+
+  const rules = await cli(cwd, ["__complete", "--", "info", "rule/"]);
+  assert.match(rules.stdout, /^rule\/no-secrets$/m);
+  assert.match(rules.stdout, /^rule\/typescript-quality$/m);
+  assert.doesNotMatch(rules.stdout, /^skill\/frontend-design$/m);
+});
+
+test("completion honors type filters and installed item commands", async () => {
+  const cwd = await tempProject();
+  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
+  await cli(cwd, ["add", "rule/no-secrets", "--yes"]);
+
+  const learned = await cli(cwd, ["__complete", "--", "learn", ""]);
+  assert.match(learned.stdout, /^frontend-design$/m);
+  assert.doesNotMatch(learned.stdout, /^skill\/frontend-design$/m);
+  assert.doesNotMatch(learned.stdout, /^no-secrets$/m);
+
+  const typed = await cli(cwd, ["__complete", "--", "remove", "--type", "rule", ""]);
+  assert.match(typed.stdout, /^no-secrets$/m);
+  assert.doesNotMatch(typed.stdout, /^frontend-design$/m);
+
+  const installed = await cli(cwd, ["__complete", "--", "update", ""]);
+  assert.match(installed.stdout, /^rule\/no-secrets$/m);
+  assert.match(installed.stdout, /^skill\/frontend-design$/m);
+});
+
 test("terminal output is styled when color is enabled and JSON stays plain", async () => {
   const cwd = await tempProject();
 

@@ -10,6 +10,7 @@ const { commandHelpText, helpText } = require("./help");
 const { createTheme } = require("./theme");
 const { checkForUpdate } = require("./update-check");
 const { runAdd } = require("./commands/add");
+const { runComplete, runCompletion } = require("./commands/completion");
 const { runInfo } = require("./commands/info");
 const { runInit } = require("./commands/init");
 const { runList } = require("./commands/list");
@@ -77,6 +78,16 @@ async function maybeSuggestUpdate(parsed, io, theme, options) {
 async function main(argv: string[], options: any = {}) {
   const io = options.io || createDefaultIo();
   const cwd = options.cwd || process.cwd();
+
+  if (argv[0] === "__complete") {
+    await runComplete(argv.slice(1), {
+      completeIndex: options.completeIndex,
+      cwd,
+      io,
+    });
+    return 0;
+  }
+
   const parsed = parseArgv(argv);
   const colorEnabled = !parsed.flags.json && (
     options.color !== undefined ? options.color : Boolean(io.color)
@@ -133,6 +144,9 @@ async function main(argv: string[], options: any = {}) {
       break;
     case "update":
       await runUpdate(context);
+      break;
+    case "completion":
+      await runCompletion(context);
       break;
     case "registry":
       await runRegistry(context);
