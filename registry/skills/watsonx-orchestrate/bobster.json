@@ -5,6 +5,6 @@
   "description": "Work with watsonx Orchestrate, wxo, orchestrate, and the orchestrate ADK CLI.",
   "license": "MIT",
   "tags": ["watsonx", "orchestrate", "wxo", "adk", "agents", "tools"],
-  "files": ["SKILL.md", "LICENSE.txt"],
+  "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }

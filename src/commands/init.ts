@@ -62,7 +62,8 @@ async function runInit(context) {
   }
 
   const modesPath = resolveProjectPath(cwd, config.paths.modes);
-  if ((await readFileIfExists(modesPath)) === null) {
+  const modesContent = await readFileIfExists(modesPath);
+  if (modesContent === null) {
     await addPlannedWrite(plan, cwd, modesPath, "customModes: []\n", {
       allowOverwrite: false,
     });
@@ -73,6 +74,12 @@ async function runInit(context) {
     resolveProjectPath(cwd, config.paths.skills),
     resolveProjectPath(cwd, config.paths.rules),
   ];
+  const preserved = [];
+  for (const existingPath of [...dirs, modesPath]) {
+    if (await pathExists(existingPath)) {
+      preserved.push(path.relative(cwd, existingPath));
+    }
+  }
 
   if (flags.json) {
     io.out(
@@ -83,6 +90,7 @@ async function runInit(context) {
           updates: plan.updates.map((item) => item.displayPath),
           conflicts: plan.conflicts.map((item) => item.displayPath),
           directories: dirs.map((dir) => path.relative(cwd, dir)),
+          preserved,
         },
         null,
         2,
@@ -94,6 +102,9 @@ async function runInit(context) {
       io.out(planText);
     }
     io.out(`Directories to ensure:\n  ${dirs.map((dir) => path.relative(cwd, dir)).join("\n  ")}`);
+    if (preserved.length) {
+      io.out(`Existing paths preserved:\n  ${preserved.join("\n  ")}`);
+    }
   }
 
   if (flags.dryRun) {

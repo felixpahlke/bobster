@@ -15,7 +15,15 @@ function targetFileForSkill(config, item, file) {
   return resolveProjectPath(config.cwd, path.join(config.paths.skills, item.name, file));
 }
 
-function targetFileForRule(config, item) {
+function installsRuleAsDirectory(item) {
+  return item.files.length > 1 || item.files.some((file) => file.includes("/"));
+}
+
+function targetFileForRule(config, item, file = item.entry) {
+  assertSafeRelativePath(file, "registry file");
+  if (installsRuleAsDirectory(item)) {
+    return resolveProjectPath(config.cwd, path.join(config.paths.rules, item.name, file));
+  }
   return resolveProjectPath(config.cwd, path.join(config.paths.rules, `${item.name}.md`));
 }
 
@@ -57,13 +65,18 @@ async function planInstall(config: any, registryContext: any, item: any, options
   }
 
   if (item.type === "rule") {
-    const payload = await fetchRegistryFile(registryContext, item, item.entry);
-    const target = targetFileForRule(config, item);
-    const files = [toDisplayPath(config.cwd, target)];
-    await addPlannedWrite(plan, config.cwd, target, payload.content, {
-      allowOverwrite: options.allowOverwrite,
-      item,
-    });
+    const files = [];
+    const registryFiles = installsRuleAsDirectory(item) ? item.files : [item.entry];
+
+    for (const file of registryFiles) {
+      const payload = await fetchRegistryFile(registryContext, item, file);
+      const target = targetFileForRule(config, item, file);
+      files.push(toDisplayPath(config.cwd, target));
+      await addPlannedWrite(plan, config.cwd, target, payload.content, {
+        allowOverwrite: options.allowOverwrite,
+        item,
+      });
+    }
 
     return {
       lockEntry: lockEntryForItem(config, registryContext, item, files),
@@ -109,6 +122,7 @@ async function planInstall(config: any, registryContext: any, item: any, options
 }
 
 module.exports = {
+  installsRuleAsDirectory,
   planInstall,
   targetFileForMode,
   targetFileForRule,

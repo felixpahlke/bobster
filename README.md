@@ -12,14 +12,6 @@ Bobster is an independent community project. It is not an official IBM project, 
 npm install -g bobster
 ```
 
-During local development in this repo:
-
-```sh
-npm install
-npm run build
-node dist/src/cli.js --help
-```
-
 ## Quick Start
 
 ```sh
@@ -76,6 +68,8 @@ bobster learn frontend-design
 bobster forget skill/frontend-design
 ```
 
+Single-file rules install as `.bob/rules/<name>.md`. Rule items with multiple files or nested paths install as `.bob/rules/<name>/...`.
+
 ## Config
 
 `bobster.json` controls the target Bob folder and registry index:
@@ -98,6 +92,44 @@ bobster forget skill/frontend-design
 ```
 
 Use `--target .agents` if a project stores agent assets somewhere else.
+
+## Develop Locally
+
+For quick read-only checks while editing TypeScript source:
+
+```sh
+npm install
+npm run dev -- --help
+npm run dev -- search wxo
+npm run dev -- add skill/watsonx-orchestrate --dry-run
+```
+
+`npm run dev` runs from the Bobster repo root, so do not use it for write tests unless you intentionally want files created in this repo.
+
+For realistic local testing, link the CLI and use a scratch project:
+
+```sh
+npm run build
+npm link
+
+mkdir -p /tmp/bobster-test
+cd /tmp/bobster-test
+
+bobster init --yes
+bobster search wxo
+bobster add skill/watsonx-orchestrate --yes
+bobster list --installed
+```
+
+After TypeScript changes, run `npm run build` again so the linked `bobster` binary uses the latest compiled code.
+
+Before pushing, run:
+
+```sh
+npm test
+npm run registry:validate
+npm run pub:check
+```
 
 ## Registry Maintenance
 

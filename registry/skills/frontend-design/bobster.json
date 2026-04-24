@@ -5,6 +5,6 @@
   "description": "Create distinctive, production-grade frontend interfaces with high design quality.",
   "license": "MIT",
   "tags": ["frontend", "design", "ui", "react"],
-  "files": ["SKILL.md", "LICENSE.txt"],
+  "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }

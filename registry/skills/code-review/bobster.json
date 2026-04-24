@@ -5,6 +5,6 @@
   "description": "Review changes for bugs, regressions, missing tests, and maintainability risks.",
   "license": "MIT",
   "tags": ["review", "quality", "testing"],
-  "files": ["SKILL.md", "LICENSE.txt"],
+  "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }

@@ -3,6 +3,7 @@
 const { BobsterError } = require("../error");
 const { loadConfig } = require("../config/load-config");
 const { formatItemId } = require("../output");
+const { installsRuleAsDirectory } = require("../installers/planner");
 const { fetchRegistryIndex } = require("../registry/fetch-index");
 const { resolveRegistryItem } = require("../registry/resolve-item");
 
@@ -11,6 +12,9 @@ function installTarget(config, item) {
     return `${config.paths.skills}/${item.name}/`;
   }
   if (item.type === "rule") {
+    if (installsRuleAsDirectory(item)) {
+      return `${config.paths.rules}/${item.name}/`;
+    }
     return `${config.paths.rules}/${item.name}.md`;
   }
   return config.paths.modes;
