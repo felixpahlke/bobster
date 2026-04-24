@@ -52,7 +52,6 @@ bobster info <name> [--type skill|rule|mode] [--json]
 bobster add <name> [--dry-run] [--yes] [--force] [--json]
 bobster remove <name> [--dry-run] [--yes] [--json]
 bobster update [name] [--dry-run] [--yes] [--json]
-bobster completion <bash|zsh|fish>
 ```
 
 Every command supports focused help:
@@ -81,13 +80,13 @@ Single-file rules install as `.bob/rules/<name>.md`. Rule items with multiple fi
 
 ## Shell Completion
 
-Bobster can generate shell completion scripts for commands, flags, `--type` values, registry item names, and installed item names.
+Bobster ships shell completion scripts for commands, flags, `--type` values, registry item names, and installed item names. After installing the matching shell hook, `bobster add wats<Tab>` completes to `watsonx-orchestrate`.
 
 For zsh:
 
 ```sh
 mkdir -p ~/.zfunc
-bobster completion zsh > ~/.zfunc/_bobster
+ln -sf "$(npm root -g)/bobster-cli/completions/_bobster" ~/.zfunc/_bobster
 ```
 
 Then make sure `~/.zfunc` is on `fpath` and `compinit` is enabled in your shell config:
@@ -100,15 +99,14 @@ autoload -Uz compinit && compinit
 For bash:
 
 ```sh
-bobster completion bash > ~/.bobster-completion.bash
-source ~/.bobster-completion.bash
+source "$(npm root -g)/bobster-cli/completions/bobster.bash"
 ```
 
 For fish:
 
 ```sh
 mkdir -p ~/.config/fish/completions
-bobster completion fish > ~/.config/fish/completions/bobster.fish
+ln -sf "$(npm root -g)/bobster-cli/completions/bobster.fish" ~/.config/fish/completions/bobster.fish
 ```
 
 ## Config

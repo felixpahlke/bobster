@@ -10,7 +10,7 @@ const { commandHelpText, helpText } = require("./help");
 const { createTheme } = require("./theme");
 const { checkForUpdate } = require("./update-check");
 const { runAdd } = require("./commands/add");
-const { runComplete, runCompletion } = require("./commands/completion");
+const { runComplete } = require("./commands/completion");
 const { runInfo } = require("./commands/info");
 const { runInit } = require("./commands/init");
 const { runList } = require("./commands/list");
@@ -144,9 +144,6 @@ async function main(argv: string[], options: any = {}) {
       break;
     case "update":
       await runUpdate(context);
-      break;
-    case "completion":
-      await runCompletion(context);
       break;
     case "registry":
       await runRegistry(context);

@@ -1,7 +1,6 @@
 "use strict";
 
 const { ITEM_TYPES } = require("../constants");
-const { BobsterError } = require("../error");
 const { loadConfig } = require("../config/load-config");
 const { readLockfile } = require("../lockfile/lockfile");
 const { fetchRegistryIndex } = require("../registry/fetch-index");
@@ -20,12 +19,10 @@ const COMMANDS = [
   "registry",
   "registry:build",
   "registry:validate",
-  "completion",
   "help",
 ];
 
 const REGISTRY_SUBCOMMANDS = ["build", "validate"];
-const SHELLS = ["bash", "zsh", "fish"];
 const GLOBAL_FLAGS = ["--help", "--version"];
 const VALUE_FLAGS = new Set(["--target", "--registry", "--type", "--base-url"]);
 
@@ -42,7 +39,6 @@ const COMMAND_FLAGS = {
   registry: ["--base-url", "--check", "--json", "--help"],
   "registry:build": ["--base-url", "--check", "--json", "--help"],
   "registry:validate": ["--json", "--help"],
-  completion: ["--help"],
   help: [],
 };
 
@@ -195,16 +191,16 @@ function itemSuggestions(items, options: any = {}) {
     return (!type || item.type === type) && (!options.allowedTypes || options.allowedTypes.includes(item.type));
   });
 
+  if (explicitType) {
+    return byCurrent(matchingItems.map((item) => `${item.type}/${item.name}`), current);
+  }
+
   const values = matchingItems.flatMap((item) => {
     if (options.unqualified || type) {
       return [item.name];
     }
     return [`${item.type}/${item.name}`];
   });
-
-  if (explicitType && !options.unqualified) {
-    return byCurrent(matchingItems.map((item) => `${item.type}/${item.name}`), current);
-  }
 
   return byCurrent(values, current);
 }
@@ -242,7 +238,7 @@ async function completeName(command, cwd, parsed, current) {
       allowedTypes: ITEM_TYPES,
       current,
       type,
-      unqualified: Boolean(type),
+      unqualified: true,
     });
   }
 
@@ -289,10 +285,6 @@ async function completionSuggestions(rawWords, options: any = {}) {
     return byCurrent(COMMANDS.filter((command) => command !== "help"), current);
   }
 
-  if (parsed.command === "completion") {
-    return byCurrent(SHELLS, current);
-  }
-
   if (current.startsWith("--")) {
     return commandFlags(parsed.command, current);
   }
@@ -312,88 +304,12 @@ async function completionSuggestions(rawWords, options: any = {}) {
   return [];
 }
 
-function completionScript(shell) {
-  switch (shell) {
-    case "bash":
-      return `# bash completion for bobster
-_bobster_completion() {
-  local suggestions
-  local current_index=$((COMP_CWORD - 1))
-  suggestions=$(BOBSTER_COMPLETE_INDEX="$current_index" bobster __complete -- "\${COMP_WORDS[@]:1}" 2>/dev/null) || return 0
-  [[ -z "$suggestions" ]] && return 0
-  local IFS=$'\\n'
-  COMPREPLY=($(compgen -W "$suggestions" -- "\${COMP_WORDS[COMP_CWORD]}"))
-}
-
-complete -o default -F _bobster_completion bobster
-`;
-    case "zsh":
-      return `#compdef bobster
-
-_bobster_completion() {
-  local current_index=$((CURRENT - 2))
-  (( current_index < 0 )) && current_index=0
-  local -a suggestions
-  suggestions=("\${(@f)$(BOBSTER_COMPLETE_INDEX="$current_index" bobster __complete -- "\${words[@]:1}" 2>/dev/null)}")
-  if (( \${#suggestions[@]} )); then
-    compadd -- "\${suggestions[@]}"
-  else
-    _files
-  fi
-}
-
-_bobster_completion "$@"
-`;
-    case "fish":
-      return `function __bobster_complete
-    set -l tokens (commandline -opc)
-    if test (count $tokens) -gt 0
-        set -e tokens[1]
-    end
-
-    set -l current_index (math (count $tokens) - 1)
-    set -l current_token (commandline -ct)
-    if test -z "$current_token"
-        set current_index (count $tokens)
-        set -a tokens ""
-    end
-
-    env BOBSTER_COMPLETE_INDEX=$current_index bobster __complete -- $tokens 2>/dev/null
-end
-
-complete -c bobster -f -a "(__bobster_complete)"
-`;
-    default:
-      throw new BobsterError(`Unknown shell: ${shell}`);
-  }
-}
-
-function completionUsage() {
-  return "Usage: bobster completion <bash|zsh|fish>";
-}
-
-async function runCompletion(context) {
-  const shell = context.args[0];
-  if (!shell || context.flags.help) {
-    context.io.out(completionUsage());
-    return;
-  }
-
-  if (!SHELLS.includes(shell)) {
-    throw new BobsterError(`${completionUsage()}\n\nUnknown shell: ${shell}`);
-  }
-
-  context.io.out(completionScript(shell).trimEnd());
-}
-
 async function runComplete(rawWords, options: any = {}) {
   const suggestions = await completionSuggestions(rawWords, options);
   options.io.out(suggestions.join("\n"));
 }
 
 module.exports = {
-  completionScript,
   completionSuggestions,
   runComplete,
-  runCompletion,
 };

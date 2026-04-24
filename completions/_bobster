@@ -1,0 +1,17 @@
+#compdef bobster
+
+_bobster_completion() {
+  local current_index=$((CURRENT - 2))
+  (( current_index < 0 )) && current_index=0
+
+  local -a suggestions
+  suggestions=("${(@f)$(BOBSTER_COMPLETE_INDEX="$current_index" bobster __complete -- "${words[@]:1}" 2>/dev/null)}")
+
+  if (( ${#suggestions[@]} )); then
+    compadd -- "${suggestions[@]}"
+  else
+    _files
+  fi
+}
+
+_bobster_completion "$@"

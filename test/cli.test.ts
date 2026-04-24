@@ -139,30 +139,37 @@ test("help is available globally, per command, and through help <command>", asyn
   assert.match(registry.stdout, /build\|validate/);
 });
 
-test("completion script generation is available for supported shells", async () => {
-  const cwd = await tempProject();
-
-  const zsh = await cli(cwd, ["completion", "zsh"]);
-  assert.match(zsh.stdout, /#compdef bobster/);
-  assert.match(zsh.stdout, /bobster __complete/);
-
-  const help = await cli(cwd, ["help", "completion"]);
-  assert.match(help.stdout, /bobster completion <bash\|zsh\|fish>/);
-});
-
 test("completion suggests registry skills and rules", async () => {
   const cwd = await tempProject();
   await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
 
-  const skills = await cli(cwd, ["__complete", "--", "add", "skill/"]);
-  assert.match(skills.stdout, /^skill\/frontend-design$/m);
+  const unqualified = await cli(cwd, ["__complete", "--", "add", "wats"]);
+  assert.match(unqualified.stdout, /^watsonx-orchestrate$/m);
+  assert.doesNotMatch(unqualified.stdout, /^skill\/watsonx-orchestrate$/m);
+
+  const skills = await cli(cwd, ["__complete", "--", "add", "skill/wats"]);
   assert.match(skills.stdout, /^skill\/watsonx-orchestrate$/m);
-  assert.doesNotMatch(skills.stdout, /^rule\/no-secrets$/m);
+  assert.doesNotMatch(skills.stdout, /^watsonx-orchestrate$/m);
+
+  const allSkills = await cli(cwd, ["__complete", "--", "add", "skill/"]);
+  assert.match(allSkills.stdout, /^skill\/frontend-design$/m);
+  assert.match(allSkills.stdout, /^skill\/watsonx-orchestrate$/m);
+  assert.doesNotMatch(allSkills.stdout, /^rule\/no-secrets$/m);
 
   const rules = await cli(cwd, ["__complete", "--", "info", "rule/"]);
   assert.match(rules.stdout, /^rule\/no-secrets$/m);
   assert.match(rules.stdout, /^rule\/typescript-quality$/m);
   assert.doesNotMatch(rules.stdout, /^skill\/frontend-design$/m);
+});
+
+test("completion hook files are packaged outside the public command list", async () => {
+  const cwd = await tempProject();
+  const help = await cli(cwd, ["--help"]);
+  assert.doesNotMatch(help.stdout, /bobster completion/);
+
+  assert.match(await fs.readFile(path.join(repoRoot, "completions", "_bobster"), "utf8"), /bobster __complete/);
+  assert.match(await fs.readFile(path.join(repoRoot, "completions", "bobster.bash"), "utf8"), /bobster __complete/);
+  assert.match(await fs.readFile(path.join(repoRoot, "completions", "bobster.fish"), "utf8"), /bobster __complete/);
 });
 
 test("completion honors type filters and installed item commands", async () => {
