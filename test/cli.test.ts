@@ -10,15 +10,15 @@ const test = require("node:test");
 const { main } = require("../src/cli");
 
 const execFileAsync = promisify(execFile);
-const repoRoot = path.resolve(__dirname, "..");
-const binPath = path.join(repoRoot, "bin", "bobster.js");
+const repoRoot = path.resolve(__dirname, "..", "..");
+const binPath = path.join(repoRoot, "dist", "src", "cli.js");
 const registryPath = path.join(repoRoot, "registry", "index.json");
 
 async function tempProject() {
   return fs.mkdtemp(path.join(os.tmpdir(), "bobster-test-"));
 }
 
-async function cli(cwd, args, options = {}) {
+async function cli(cwd: string, args: string[], options: any = {}) {
   const stdout = [];
   const stderr = [];
   const io = {
@@ -134,6 +134,22 @@ test("learn alias installs a skill", async () => {
   await cli(cwd, ["learn", "frontend-design", "--yes"]);
 
   await fs.access(path.join(cwd, ".bob", "skills", "frontend-design", "SKILL.md"));
+});
+
+test("watsonx Orchestrate skill is searchable and installable", async () => {
+  const cwd = await tempProject();
+  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+
+  const search = await cli(cwd, ["search", "wxo", "--registry", registryPath]);
+  assert.match(search.stdout, /skill\/watsonx-orchestrate/);
+
+  await cli(cwd, ["add", "skill/watsonx-orchestrate", "--yes"]);
+
+  const skill = await fs.readFile(
+    path.join(cwd, ".bob", "skills", "watsonx-orchestrate", "SKILL.md"),
+    "utf8",
+  );
+  assert.match(skill, /uv run orchestrate --help/);
 });
 
 test("reinstall is idempotent and add without force refuses conflicts", async () => {

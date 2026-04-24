@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 
 const fs = require("node:fs");
@@ -31,12 +32,12 @@ function createDefaultIo() {
 
 function packageVersion() {
   const packageJson = JSON.parse(
-    fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8"),
+    fs.readFileSync(path.resolve(__dirname, "..", "..", "package.json"), "utf8"),
   );
   return packageJson.version;
 }
 
-async function main(argv, options = {}) {
+async function main(argv: string[], options: any = {}) {
   const io = options.io || createDefaultIo();
   const cwd = options.cwd || process.cwd();
   const parsed = parseArgv(argv);
@@ -112,8 +113,8 @@ async function main(argv, options = {}) {
   return 0;
 }
 
-function run(argv, options = {}) {
-  main(argv, options).catch((error) => {
+function run(argv: string[], options: any = {}) {
+  main(argv, options).catch((error: any) => {
     const io = options.io || createDefaultIo();
     if (error instanceof BobsterError) {
       io.err(error.message);
@@ -123,6 +124,10 @@ function run(argv, options = {}) {
     io.err(error.stack || error.message);
     process.exitCode = 1;
   });
+}
+
+if (require.main === module) {
+  run(process.argv.slice(2));
 }
 
 module.exports = {

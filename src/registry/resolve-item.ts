@@ -20,7 +20,7 @@ function parseQualifiedName(value) {
   };
 }
 
-function resolveRegistryItem(index, value, options = {}) {
+function resolveRegistryItem(index: any, value: string, options: any = {}) {
   const parsed = parseQualifiedName(value);
   const requestedType = options.type ? normalizeType(options.type) : parsed.type;
   const matches = index.items.filter((item) => {
@@ -50,7 +50,7 @@ function resolveRegistryItem(index, value, options = {}) {
   throw new BobsterError(`No registry item found for "${value}".${suffix}`);
 }
 
-function resolveInstalledItem(lockfile, value, options = {}) {
+function resolveInstalledItem(lockfile: any, value: string, options: any = {}) {
   const parsed = parseQualifiedName(value);
   const requestedType = options.type ? normalizeType(options.type) : parsed.type;
   const matches = lockfile.items.filter((item) => {

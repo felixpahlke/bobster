@@ -2,7 +2,7 @@
 
 const readline = require("node:readline/promises");
 
-async function confirm(message, options = {}) {
+async function confirm(message: string, options: any = {}) {
   const input = options.input || process.stdin;
   const output = options.output || process.stderr;
 

@@ -4,6 +4,8 @@ Bobster is an npm-distributed CLI and public registry for reusable Bob assets.
 
 Bob is IBM's coding agent. Bobster helps teams discover, install, update, and share Bob skills, reusable rules, and custom modes without running a hosted registry service.
 
+Bobster is an independent community project. It is not an official IBM project, product, or distribution.
+
 ## Install
 
 ```sh
@@ -13,7 +15,9 @@ npm install -g bobster
 During local development in this repo:
 
 ```sh
-node bin/bobster.js --help
+npm install
+npm run build
+node dist/src/cli.js --help
 ```
 
 ## Quick Start

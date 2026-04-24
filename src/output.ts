@@ -18,7 +18,7 @@ function groupItems(items) {
   }, {});
 }
 
-function formatItemRows(items, options = {}) {
+function formatItemRows(items: any[], options: any = {}) {
   if (!items.length) {
     return "No items found.";
   }
@@ -33,7 +33,7 @@ function formatItemRows(items, options = {}) {
     .join("\n");
 }
 
-function formatGroupedItems(items, options = {}) {
+function formatGroupedItems(items: any[], options: any = {}) {
   if (!items.length) {
     return "No items found.";
   }

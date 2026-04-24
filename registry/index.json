@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-24T09:26:01.266Z",
+  "generatedAt": "2026-04-24T10:14:37.991Z",
   "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
   "items": [
     {
@@ -102,6 +102,27 @@
         "react"
       ],
       "path": "skills/frontend-design",
+      "files": [
+        "SKILL.md",
+        "LICENSE.txt"
+      ],
+      "entry": "SKILL.md"
+    },
+    {
+      "name": "watsonx-orchestrate",
+      "type": "skill",
+      "version": "0.1.0",
+      "description": "Work with watsonx Orchestrate, wxo, orchestrate, and the orchestrate ADK CLI.",
+      "license": "MIT",
+      "tags": [
+        "watsonx",
+        "orchestrate",
+        "wxo",
+        "adk",
+        "agents",
+        "tools"
+      ],
+      "path": "skills/watsonx-orchestrate",
       "files": [
         "SKILL.md",
         "LICENSE.txt"

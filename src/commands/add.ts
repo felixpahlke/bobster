@@ -10,7 +10,7 @@ const { fetchRegistryIndex } = require("../registry/fetch-index");
 const { resolveRegistryItem } = require("../registry/resolve-item");
 const { planInstall } = require("../installers/planner");
 
-async function runAdd(context, options = {}) {
+async function runAdd(context: any, options: any = {}) {
   const { args, cwd, flags, io } = context;
   const rawName = args[0];
   if (!rawName) {

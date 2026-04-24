@@ -74,7 +74,7 @@ function parseEntries(content) {
   };
 }
 
-function mergeModeYaml(existingContent, modeYaml, options = {}) {
+function mergeModeYaml(existingContent: string, modeYaml: string, options: any = {}) {
   const slug = extractModeSlug(modeYaml);
   const nextBlock = modeYamlToListBlock(modeYaml);
   const content = existingContent && existingContent.trim() ? existingContent : "customModes: []\n";

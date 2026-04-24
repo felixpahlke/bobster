@@ -5,10 +5,10 @@
   "license": "MIT",
   "type": "commonjs",
   "bin": {
-    "bobster": "./bin/bobster.js"
+    "bobster": "./dist/src/cli.js"
   },
   "files": [
-    "bin",
+    "dist/src",
     "src",
     "registry",
     "schema",
@@ -16,11 +16,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test",
-    "registry:build": "node bin/bobster.js registry build",
-    "registry:validate": "node bin/bobster.js registry validate",
-    "pub:check": "npm --cache .npm-cache pack --dry-run",
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js",
+    "registry:build": "npm run build && node dist/src/cli.js registry build",
+    "registry:validate": "npm run build && node dist/src/cli.js registry validate",
+    "pub:check": "npm run build && npm --cache .npm-cache pack --dry-run",
     "pub:release": "npm --cache .npm-cache publish",
+    "prepare": "npm run build",
     "prepub:release": "npm run test && npm run registry:validate && npm run pub:check"
   },
   "keywords": [
@@ -37,5 +39,9 @@
   },
   "dependencies": {
     "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
   }
 }

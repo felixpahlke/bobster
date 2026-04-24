@@ -23,7 +23,7 @@ function targetFileForMode(config) {
   return resolveProjectPath(config.cwd, config.paths.modes);
 }
 
-function lockEntryForItem(config, registryContext, item, files, extra = {}) {
+function lockEntryForItem(config: any, registryContext: any, item: any, files: string[], extra: any = {}) {
   return {
     type: item.type,
     name: item.name,
@@ -35,7 +35,7 @@ function lockEntryForItem(config, registryContext, item, files, extra = {}) {
   };
 }
 
-async function planInstall(config, registryContext, item, options = {}) {
+async function planInstall(config: any, registryContext: any, item: any, options: any = {}) {
   const plan = createWritePlan();
 
   if (item.type === "skill") {

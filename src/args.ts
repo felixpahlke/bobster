@@ -10,9 +10,9 @@ function toFlagName(flag) {
     .replace(/-([a-z])/g, (_, char) => char.toUpperCase());
 }
 
-function parseArgv(argv) {
-  const flags = {};
-  const positionals = [];
+function parseArgv(argv: string[]) {
+  const flags: any = {};
+  const positionals: string[] = [];
 
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];

@@ -1,7 +1,9 @@
 "use strict";
 
 class BobsterError extends Error {
-  constructor(message, options = {}) {
+  exitCode: number;
+
+  constructor(message: string, options: any = {}) {
     super(message);
     this.name = "BobsterError";
     this.exitCode = options.exitCode || 1;

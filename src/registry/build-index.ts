@@ -27,7 +27,7 @@ async function directoryEntries(dirPath) {
   }
 }
 
-async function buildRegistryIndex(options = {}) {
+async function buildRegistryIndex(options: any = {}) {
   const root = options.root || PACKAGE_ROOT;
   const registryRoot = path.join(root, "registry");
   const items = [];
@@ -80,7 +80,7 @@ async function buildRegistryIndex(options = {}) {
   });
 }
 
-async function writeRegistryIndex(options = {}) {
+async function writeRegistryIndex(options: any = {}) {
   const root = options.root || PACKAGE_ROOT;
   const index = await buildRegistryIndex(options);
   const indexPath = path.join(root, "registry", "index.json");

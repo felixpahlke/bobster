@@ -42,7 +42,7 @@ function scoreItem(item, tokens) {
   return score;
 }
 
-function searchItems(items, query, options = {}) {
+function searchItems(items: any[], query: string, options: any = {}) {
   const tokens = tokenize(query);
   if (!tokens.length) {
     return [];

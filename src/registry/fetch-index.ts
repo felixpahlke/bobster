@@ -48,7 +48,7 @@ async function readTextSource(source, cwd) {
   };
 }
 
-async function fetchRegistryIndex(registry, options = {}) {
+async function fetchRegistryIndex(registry: string, options: any = {}) {
   const cwd = options.cwd || process.cwd();
   let result;
   let usedFallback = false;

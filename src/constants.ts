@@ -2,7 +2,7 @@
 
 const path = require("node:path");
 
-const PACKAGE_ROOT = path.resolve(__dirname, "..");
+const PACKAGE_ROOT = path.resolve(__dirname, "..", "..");
 const DEFAULT_TARGET = ".bob";
 const DEFAULT_REGISTRY =
   "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry/index.json";

@@ -17,7 +17,7 @@ function readJsonIfExists(filePath) {
   }
 }
 
-function loadConfig(cwd, flags = {}) {
+function loadConfig(cwd: string, flags: any = {}) {
   const configPath = resolveConfigPath(cwd);
   const fileConfig = readJsonIfExists(configPath) || {};
   const target = flags.target || fileConfig.target || DEFAULT_TARGET;

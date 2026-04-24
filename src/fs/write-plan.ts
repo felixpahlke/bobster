@@ -32,7 +32,7 @@ async function fileExists(filePath) {
   }
 }
 
-async function addPlannedWrite(plan, cwd, filePath, content, options = {}) {
+async function addPlannedWrite(plan: any, cwd: string, filePath: string, content: string, options: any = {}) {
   const displayPath = options.displayPath || toDisplayPath(cwd, filePath);
   const existing = await readFileIfExists(filePath);
 
@@ -64,7 +64,7 @@ async function addPlannedWrite(plan, cwd, filePath, content, options = {}) {
   });
 }
 
-async function addPlannedDelete(plan, cwd, filePath, options = {}) {
+async function addPlannedDelete(plan: any, cwd: string, filePath: string, options: any = {}) {
   if (!(await fileExists(filePath))) {
     return;
   }
@@ -100,7 +100,7 @@ function hasWrites(plan) {
   );
 }
 
-async function applyWritePlan(plan, options = {}) {
+async function applyWritePlan(plan: any, options: any = {}) {
   const writes = [...plan.creates, ...plan.updates];
   if (options.forceConflicts) {
     writes.push(...plan.conflicts);
@@ -116,7 +116,7 @@ async function applyWritePlan(plan, options = {}) {
   }
 }
 
-function formatPlan(plan, options = {}) {
+function formatPlan(plan: any, options: any = {}) {
   const lines = [];
   const indent = options.indent || "  ";
   const theme = options.theme;
