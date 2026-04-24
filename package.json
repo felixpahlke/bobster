@@ -1,0 +1,32 @@
+{
+  "name": "bobster",
+  "version": "0.0.0",
+  "description": "CLI and registry for Bob skills, rules, and custom modes.",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "bobster": "./bin/bobster.js"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "pub:check": "npm pack --dry-run",
+    "pub:release": "npm publish",
+    "prepub:release": "npm run pub:check"
+  },
+  "keywords": [
+    "bob",
+    "agent",
+    "skills",
+    "rules",
+    "modes",
+    "registry",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
