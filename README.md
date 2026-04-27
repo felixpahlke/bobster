@@ -184,9 +184,16 @@ Each item manifest lists the files that belong to the item:
   "description": "Example project guidance for Bob.",
   "tags": ["example"],
   "files": ["RULE.md"],
-  "entry": "RULE.md"
+  "entry": "RULE.md",
+  "origin": {
+    "url": "https://github.example.com/team/source-repo/blob/main/path/to/original.md",
+    "path": "path/to/original.md",
+    "ref": "main"
+  }
 }
 ```
+
+`origin` is optional. Use it for private or migrated assets when maintainers need to know where an item originally came from. Remove or replace private origin metadata before promoting content into a public registry.
 
 Maintain private registry clones outside this public repository, or place them under `.private-registries/` for local agent workflows. That folder is ignored and must not be committed.
 

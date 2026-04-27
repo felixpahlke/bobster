@@ -66,6 +66,7 @@ async function buildRegistryIndex(options: any = {}) {
         path: `${typeDir}/${entry.name}`,
         files: manifest.files,
         entry: manifest.entry,
+        ...(manifest.origin ? { origin: manifest.origin } : {}),
       });
     }
   }

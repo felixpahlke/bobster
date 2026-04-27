@@ -12,7 +12,7 @@ const TYPE_ALIASES = {
   modes: "mode",
   mode: "mode",
 };
-const MANIFEST_FIELDS = new Set(["name", "type", "version", "description", "tags", "files", "entry"]);
+const MANIFEST_FIELDS = new Set(["name", "type", "version", "description", "tags", "files", "entry", "origin"]);
 const INDEX_FIELDS = new Set([...MANIFEST_FIELDS, "license", "path"]);
 
 function normalizeType(type) {
@@ -59,6 +59,20 @@ function validateManifest(manifest, options: any = {}) {
 
   if (!Array.isArray(manifest.tags) || !manifest.tags.every((tag) => typeof tag === "string")) {
     errors.push("tags must be an array of strings");
+  }
+
+  if (manifest.origin !== undefined) {
+    if (!manifest.origin || typeof manifest.origin !== "object" || Array.isArray(manifest.origin)) {
+      errors.push("origin must be an object");
+    } else {
+      for (const [key, value] of Object.entries(manifest.origin)) {
+        if (!["url", "path", "ref", "sha", "importedAt", "notes"].includes(key)) {
+          errors.push(`origin.${key} is not allowed`);
+        } else if (typeof value !== "string") {
+          errors.push(`origin.${key} must be a string`);
+        }
+      }
+    }
   }
 
   if (!Array.isArray(manifest.files) || !manifest.files.length) {

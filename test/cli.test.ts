@@ -341,6 +341,28 @@ test("registry manifests reject obsolete per-item license metadata", () => {
   );
 });
 
+test("registry manifests allow origin provenance metadata", () => {
+  assert.doesNotThrow(() =>
+    validateManifest({
+      name: "origin-item",
+      type: "rule",
+      version: "0.1.0",
+      description: "A rule with original source metadata.",
+      tags: ["rules"],
+      files: ["RULE.md"],
+      entry: "RULE.md",
+      origin: {
+        url: "https://github.example.com/team/source/blob/main/RULE.md",
+        path: "RULE.md",
+        ref: "main",
+        sha: "abc123",
+        importedAt: "2026-04-27T00:00:00.000Z",
+        notes: "Imported for private review.",
+      },
+    }),
+  );
+});
+
 test("interactive global-style runs suggest package updates without changing stdout", async () => {
   const cwd = await tempProject();
   const output = await cli(cwd, ["list", "--registry", registryPath], {
