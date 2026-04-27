@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-27T10:25:10.128Z",
+  "generatedAt": "2026-04-27T10:43:24.734Z",
   "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
   "items": [
     {
@@ -173,6 +173,55 @@
       "entry": "SKILL.md"
     },
     {
+      "name": "customercare-mcp-builder",
+      "type": "skill",
+      "version": "0.1.0",
+      "description": "Build customer care MCP servers for watsonx Orchestrate with transactions, widgets, authentication, context, and reference implementations.",
+      "license": "MIT",
+      "tags": [
+        "mcp",
+        "customer-care",
+        "watsonx",
+        "orchestrate",
+        "widgets",
+        "transactions"
+      ],
+      "topics": [
+        "watsonx",
+        "mcp",
+        "tools"
+      ],
+      "aliases": [
+        "customer care mcp",
+        "mcp builder",
+        "customer service mcp"
+      ],
+      "keywords": [
+        "streamable http",
+        "confirmation widget",
+        "direct response",
+        "hybrid response",
+        "opensearch",
+        "authentication"
+      ],
+      "status": "stable",
+      "path": "skills/customercare-mcp-builder",
+      "files": [
+        "SKILL.md",
+        "references/examples.md",
+        "references/upstream-license.md"
+      ],
+      "entry": "SKILL.md",
+      "origin": {
+        "url": "https://github.com/IBM/ibm-watsonx-orchestrate-adk/tree/main/skills/customercare-mcp-builder",
+        "path": "skills/customercare-mcp-builder",
+        "ref": "main",
+        "sha": "d81c73277d1cb488d65a49a7ee4d83a3b4f92b37",
+        "importedAt": "2026-04-27T10:40:20Z",
+        "notes": "Imported from the public IBM watsonx Orchestrate ADK skills directory."
+      }
+    },
+    {
       "name": "frontend-design",
       "type": "skill",
       "version": "0.1.0",
@@ -208,6 +257,53 @@
       "entry": "SKILL.md"
     },
     {
+      "name": "sop-builder",
+      "type": "skill",
+      "version": "0.1.0",
+      "description": "Generate business-facing Standard Operating Procedures from BPMN, n8n, Langflow, workflow models, or process descriptions.",
+      "license": "MIT",
+      "tags": [
+        "sop",
+        "workflow",
+        "business-process",
+        "bpmn",
+        "n8n",
+        "langflow"
+      ],
+      "topics": [
+        "documentation",
+        "workflow",
+        "business-analysis"
+      ],
+      "aliases": [
+        "standard operating procedure",
+        "process documentation",
+        "workflow to sop"
+      ],
+      "keywords": [
+        "business process",
+        "mermaid",
+        "procedure",
+        "workflow diagram",
+        "requirements"
+      ],
+      "status": "stable",
+      "path": "skills/sop-builder",
+      "files": [
+        "SKILL.md",
+        "references/upstream-license.md"
+      ],
+      "entry": "SKILL.md",
+      "origin": {
+        "url": "https://github.com/IBM/ibm-watsonx-orchestrate-adk/tree/main/skills/sop-builder",
+        "path": "skills/sop-builder",
+        "ref": "main",
+        "sha": "d81c73277d1cb488d65a49a7ee4d83a3b4f92b37",
+        "importedAt": "2026-04-27T10:40:20Z",
+        "notes": "Imported from the public IBM watsonx Orchestrate ADK skills directory."
+      }
+    },
+    {
       "name": "watsonx-orchestrate",
       "type": "skill",
       "version": "0.1.0",
@@ -241,9 +337,20 @@
       "status": "stable",
       "path": "skills/watsonx-orchestrate",
       "files": [
-        "SKILL.md"
+        "SKILL.md",
+        "references/wxo-builder.md",
+        "references/adk-skills-overview.md",
+        "references/upstream-license.md"
       ],
-      "entry": "SKILL.md"
+      "entry": "SKILL.md",
+      "origin": {
+        "url": "https://github.com/IBM/ibm-watsonx-orchestrate-adk/tree/main/skills/wxo-builder",
+        "path": "skills/wxo-builder",
+        "ref": "main",
+        "sha": "d81c73277d1cb488d65a49a7ee4d83a3b4f92b37",
+        "importedAt": "2026-04-27T10:40:20Z",
+        "notes": "Consolidated the public ADK wxo-builder skill as reference material under the existing public Bobster watsonx-orchestrate skill."
+      }
     }
   ]
 }

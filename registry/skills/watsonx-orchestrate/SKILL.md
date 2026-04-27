@@ -23,6 +23,10 @@ set -a; source .env; set +a; uv run orchestrate env activate "$WXO_ENV_NAME" --a
 
 The environment name is configured in `.env` as `WXO_ENV_NAME`.
 
+For this to be possible, an environment has to be available, otherwise it needs to be created first for example:
+
+orchestrate env add -n env-name -u https://api.instance-region.watson-orchestrate.cloud.ibm.com/instances/instance-id
+
 Use `uv run orchestrate --help` to find out what you can do with the CLI.
 
 ## This Codebase
@@ -96,3 +100,9 @@ def my_tool(input: str) -> str:
 
     return f"Hello, {input}"
 ```
+
+## References
+
+Use `references/wxo-builder.md` when the user needs deeper ADK guidance for generating full watsonx Orchestrate agents, tools, flows, and knowledge bases from SOPs or prompts.
+
+Use `references/adk-skills-overview.md` for the upstream ADK skill set overview, including related SOP and customer care MCP builder skills.

@@ -8,6 +8,14 @@
   "aliases": ["wxo", "watsonx orchestrate", "orchestrate adk"],
   "keywords": ["agent builder", "tools", "adk cli", "assistant", "watsonx"],
   "status": "stable",
-  "files": ["SKILL.md"],
-  "entry": "SKILL.md"
+  "files": ["SKILL.md", "references/wxo-builder.md", "references/adk-skills-overview.md", "references/upstream-license.md"],
+  "entry": "SKILL.md",
+  "origin": {
+    "url": "https://github.com/IBM/ibm-watsonx-orchestrate-adk/tree/main/skills/wxo-builder",
+    "path": "skills/wxo-builder",
+    "ref": "main",
+    "sha": "d81c73277d1cb488d65a49a7ee4d83a3b4f92b37",
+    "importedAt": "2026-04-27T10:40:20Z",
+    "notes": "Consolidated the public ADK wxo-builder skill as reference material under the existing public Bobster watsonx-orchestrate skill."
+  }
 }

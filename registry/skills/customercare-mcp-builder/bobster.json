@@ -1,0 +1,21 @@
+{
+  "name": "customercare-mcp-builder",
+  "type": "skill",
+  "version": "0.1.0",
+  "description": "Build customer care MCP servers for watsonx Orchestrate with transactions, widgets, authentication, context, and reference implementations.",
+  "tags": ["mcp", "customer-care", "watsonx", "orchestrate", "widgets", "transactions"],
+  "topics": ["watsonx", "mcp", "tools"],
+  "aliases": ["customer care mcp", "mcp builder", "customer service mcp"],
+  "keywords": ["streamable http", "confirmation widget", "direct response", "hybrid response", "opensearch", "authentication"],
+  "status": "stable",
+  "files": ["SKILL.md", "references/examples.md", "references/upstream-license.md"],
+  "entry": "SKILL.md",
+  "origin": {
+    "url": "https://github.com/IBM/ibm-watsonx-orchestrate-adk/tree/main/skills/customercare-mcp-builder",
+    "path": "skills/customercare-mcp-builder",
+    "ref": "main",
+    "sha": "d81c73277d1cb488d65a49a7ee4d83a3b4f92b37",
+    "importedAt": "2026-04-27T10:40:20Z",
+    "notes": "Imported from the public IBM watsonx Orchestrate ADK skills directory."
+  }
+}

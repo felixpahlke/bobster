@@ -1,0 +1,21 @@
+{
+  "name": "sop-builder",
+  "type": "skill",
+  "version": "0.1.0",
+  "description": "Generate business-facing Standard Operating Procedures from BPMN, n8n, Langflow, workflow models, or process descriptions.",
+  "tags": ["sop", "workflow", "business-process", "bpmn", "n8n", "langflow"],
+  "topics": ["documentation", "workflow", "business-analysis"],
+  "aliases": ["standard operating procedure", "process documentation", "workflow to sop"],
+  "keywords": ["business process", "mermaid", "procedure", "workflow diagram", "requirements"],
+  "status": "stable",
+  "files": ["SKILL.md", "references/upstream-license.md"],
+  "entry": "SKILL.md",
+  "origin": {
+    "url": "https://github.com/IBM/ibm-watsonx-orchestrate-adk/tree/main/skills/sop-builder",
+    "path": "skills/sop-builder",
+    "ref": "main",
+    "sha": "d81c73277d1cb488d65a49a7ee4d83a3b4f92b37",
+    "importedAt": "2026-04-27T10:40:20Z",
+    "notes": "Imported from the public IBM watsonx Orchestrate ADK skills directory."
+  }
+}
