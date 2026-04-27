@@ -29,7 +29,18 @@ function singleLineScalar(lines) {
   return stripSharedIndent(lines).join("\n").replace(/\s+/g, " ").trim();
 }
 
-function normalizeSkillFrontmatter(content) {
+function scalarValue(value) {
+  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "\"\"";
+  }
+  if (!/[:#'"\[\]{}>|]/.test(normalized)) {
+    return normalized;
+  }
+  return `'${normalized.replace(/'/g, "''")}'`;
+}
+
+function normalizeSkillFrontmatter(content, replacements: any = {}) {
   const normalized = content.replace(/\r\n/g, "\n");
   const lines = normalized.split("\n");
   if (!isFrontmatterFence(lines[0])) {
@@ -44,6 +55,12 @@ function normalizeSkillFrontmatter(content) {
   const frontmatter = [];
   for (let index = 1; index < end; index += 1) {
     const line = lines[index];
+    const key = line.match(/^([A-Za-z][A-Za-z0-9_-]*):/);
+    if (key && Object.hasOwn(replacements, key[1]) && !blockScalarField(line)) {
+      frontmatter.push(`${key[1]}: ${scalarValue(replacements[key[1]])}`);
+      continue;
+    }
+
     const field = blockScalarField(line);
     if (!field) {
       frontmatter.push(line);
@@ -58,7 +75,8 @@ function normalizeSkillFrontmatter(content) {
     }
     index -= 1;
 
-    frontmatter.push(`${field}: ${JSON.stringify(singleLineScalar(valueLines))}`);
+    const replacement = replacements[field] || singleLineScalar(valueLines);
+    frontmatter.push(`${field}: ${scalarValue(replacement)}`);
   }
 
   return [

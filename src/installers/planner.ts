@@ -57,7 +57,9 @@ async function planInstall(config: any, registryContext: any, item: any, options
     for (const file of item.files) {
       const payload = await fetchRegistryFile(registryContext, item, file);
       const target = targetFileForSkill(config, item, file);
-      const content = file === item.entry ? normalizeSkillFrontmatter(payload.content) : payload.content;
+      const content = file === item.entry
+        ? normalizeSkillFrontmatter(payload.content, { description: item.description })
+        : payload.content;
       files.push(toDisplayPath(config.cwd, target));
       await addPlannedWrite(plan, config.cwd, target, content, {
         allowOverwrite: options.allowOverwrite,

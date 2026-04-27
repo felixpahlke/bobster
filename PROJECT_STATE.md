@@ -17,5 +17,5 @@
 - Interactive select prompts now clamp arrow navigation at the first/last selectable item instead of wrapping endlessly.
 - Mode installs now normalize unindented top-level mode field content before merging into `custom_modes.yaml`, fixing malformed imported scalars and lists.
 - CLI loading spinners now appear on interactive stderr while registries or remote asset files are being loaded; `--json`, CI, and non-TTY output stay quiet.
-- Skill installs now flatten folded frontmatter scalars such as `description: >` so Bob's skill validator does not treat continuation lines as unsupported attributes.
+- Skill installs now replace frontmatter descriptions with the manifest description, avoiding folded continuation lines, long source-only text, and nested quote escapes.
 - Interactive `bobster add` and `bobster search` item pickers group visible suggestions under mode/rule/skill headings while keeping only real items selectable.

@@ -239,7 +239,7 @@ async function writeSkillRegistry(cwd: string, folder: string, itemName: string,
             name: itemName,
             type: "skill",
             version: "0.1.0",
-            description: `Skill from ${folder}.`,
+            description: "Production-grade OpenShift DevOps guidance for GitOps, pipelines, security, operations, troubleshooting, and Day-2 readiness.",
             tags: ["skill"],
             path: `skills/${itemName}`,
             files: ["SKILL.md"],
@@ -706,7 +706,7 @@ test("add normalizes folded skill frontmatter scalars", async () => {
     [
       "---",
       "name: openshift-devops",
-      "description: \"Production-grade OpenShift DevOps. Triggers include: Routes, SCCs, and GitOps.\"",
+      "description: Production-grade OpenShift DevOps guidance for GitOps, pipelines, security, operations, troubleshooting, and Day-2 readiness.",
       "---",
       "",
       "# OpenShift DevOps",
@@ -714,6 +714,31 @@ test("add normalizes folded skill frontmatter scalars", async () => {
       "Build production-ready OpenShift assets.",
       "",
     ].join("\n"),
+  );
+});
+
+test("add uses manifest description for skill frontmatter", async () => {
+  const cwd = await tempProject();
+  const skillRegistryPath = await writeSkillRegistry(
+    cwd,
+    "skill-registry",
+    "quoted-skill",
+    [
+      "---",
+      "name: quoted-skill",
+      "description: Source description with \"nested quotes\" that should not be installed.",
+      "---",
+      "",
+      "# Quoted Skill",
+      "",
+    ].join("\n"),
+  );
+
+  await cli(cwd, ["add", "skill/quoted-skill", "--registry", skillRegistryPath, "--yes"]);
+
+  assert.match(
+    await fs.readFile(path.join(cwd, ".bob", "skills", "quoted-skill", "SKILL.md"), "utf8"),
+    /^description: Production-grade OpenShift DevOps guidance for GitOps, pipelines, security, operations, troubleshooting, and Day-2 readiness\.$/m,
   );
 });
 
