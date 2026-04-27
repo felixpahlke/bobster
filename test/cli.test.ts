@@ -911,6 +911,34 @@ test("catalog and search use discovery metadata", async () => {
   assert.match(info.stdout, /Status:/);
 });
 
+test("browse rows only surface deprecated status", () => {
+  const { formatItemRows, visibleBrowseStatus } = require("../src/output");
+  const items = [
+    {
+      name: "imported-skill",
+      type: "skill",
+      description: "Imported upstream skill.",
+      tags: ["security"],
+      topics: ["security"],
+      status: "experimental",
+    },
+    {
+      name: "old-rule",
+      type: "rule",
+      description: "Old rule kept for compatibility.",
+      tags: ["security"],
+      topics: ["security"],
+      status: "deprecated",
+    },
+  ];
+
+  const rows = formatItemRows(items, { showTopics: true });
+  assert.equal(visibleBrowseStatus(items[0]), null);
+  assert.equal(visibleBrowseStatus(items[1]), "deprecated");
+  assert.doesNotMatch(rows, /experimental/);
+  assert.match(rows, /deprecated/);
+});
+
 test("bare add queries offer discovery matches before installing exact names", async () => {
   const { resolveRegistryItemForCommand, searchMatchesForBareRegistryQuery } = require("../src/commands/resolve");
   const index = {

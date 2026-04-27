@@ -60,6 +60,24 @@ function itemTopics(item) {
   return topics.length ? topics : discoveryValues(item, "tags").slice(0, 2);
 }
 
+function visibleBrowseStatus(item) {
+  return item.status === "deprecated" ? item.status : null;
+}
+
+function browseMetadata(item) {
+  const details = [];
+  const topics = itemTopics(item).slice(0, 3);
+  if (topics.length) {
+    details.push(topics.map(topicLabel).join(", "));
+  }
+
+  const status = visibleBrowseStatus(item);
+  if (status) {
+    details.push(status);
+  }
+  return details;
+}
+
 function topicLabel(topic) {
   const normalized = String(topic || "").toLowerCase();
   if (TOPIC_LABELS[normalized]) {
@@ -157,13 +175,7 @@ function formatItemRows(items: any[], options: any = {}) {
       const id = itemId(item);
       const details = [];
       if (options.showTopics) {
-        const topics = itemTopics(item).slice(0, 3);
-        if (topics.length) {
-          details.push(topics.map(topicLabel).join(", "));
-        }
-        if (item.status && item.status !== "stable") {
-          details.push(item.status);
-        }
+        details.push(...browseMetadata(item));
       }
       const suffix = details.length ? `  [${details.join("; ")}]` : "";
       return formatColumns(id, `${item.description}${suffix}`, {
@@ -258,7 +270,7 @@ function formatCatalog(items: any[], options: any = {}) {
   }
 
   const recommended = items
-    .filter((item) => item.status === "stable" || !item.status)
+    .filter((item) => visibleBrowseStatus(item) !== "deprecated")
     .sort(compareDiscoveryItems)
     .slice(0, options.recommendedLimit || 8);
   if (recommended.length) {
@@ -281,6 +293,7 @@ function formatCatalog(items: any[], options: any = {}) {
 }
 
 module.exports = {
+  browseMetadata,
   compareDiscoveryItems,
   formatCatalog,
   formatItemId,
@@ -290,4 +303,5 @@ module.exports = {
   itemTopics,
   popularTopics,
   topicLabel,
+  visibleBrowseStatus,
 };

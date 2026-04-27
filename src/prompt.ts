@@ -4,7 +4,7 @@ const readline = require("node:readline/promises");
 const { AutoComplete, Select } = require("enquirer");
 const { TYPE_LABELS } = require("./constants");
 const { BobsterError } = require("./error");
-const { itemId } = require("./output");
+const { itemId, visibleBrowseStatus } = require("./output");
 
 const SUGGESTION_TYPE_ORDER = ["mode", "rule", "skill"];
 const PROMPT_DETAIL_SEPARATOR = "  ";
@@ -185,8 +185,9 @@ function formatPromptChoice(choice, columns, theme) {
   const id = String(choice.idLabel).padEnd(columns.idWidth);
   const details = [];
 
-  if (choice.status === "deprecated") {
-    details.push(theme ? theme.danger(choice.status) : choice.status);
+  const status = visibleBrowseStatus(choice);
+  if (status) {
+    details.push(theme ? theme.danger(status) : status);
   }
   if (choice.description) {
     details.push(theme ? theme.dim(choice.description) : choice.description);
