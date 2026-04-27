@@ -161,6 +161,39 @@ async function writeRuleRegistry(cwd: string, folder: string, itemName: string, 
   return path.join(registryRoot, "index.json");
 }
 
+async function writeModeRegistry(cwd: string, folder: string, itemName: string, modeYaml: string) {
+  const registryRoot = path.join(cwd, folder);
+  const modeRoot = path.join(registryRoot, "modes", itemName);
+  await fs.mkdir(modeRoot, { recursive: true });
+  await fs.writeFile(path.join(modeRoot, "mode.yaml"), modeYaml, "utf8");
+  await fs.writeFile(
+    path.join(registryRoot, "index.json"),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: "2026-04-24T00:00:00.000Z",
+        baseUrl: "https://example.com/registry",
+        items: [
+          {
+            name: itemName,
+            type: "mode",
+            version: "0.1.0",
+            description: `Mode from ${folder}.`,
+            tags: ["mode"],
+            path: `modes/${itemName}`,
+            files: ["mode.yaml"],
+            entry: "mode.yaml",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  return path.join(registryRoot, "index.json");
+}
+
 test("init creates config, Bob folders, and custom mode file", async () => {
   const cwd = await tempProject();
 
@@ -581,6 +614,58 @@ test("add installs skill, rule, and mode and writes a lockfile", async () => {
   assert.deepEqual(
     lockfile.items.map((item) => `${item.type}/${item.name}`).sort(),
     ["mode/grug-brained", "rule/no-secrets", "skill/frontend-design"],
+  );
+});
+
+test("add normalizes unindented mode field content", async () => {
+  const cwd = await tempProject();
+  const modeRegistryPath = await writeModeRegistry(
+    cwd,
+    "mode-registry",
+    "security-reviewer",
+    [
+      "slug: security-reviewer",
+      "name: Security Reviewer",
+      "roleDefinition: >-",
+      "Review the code for security issues.",
+      "- Cite exact evidence.",
+      "  Include line numbers.",
+      "whenToUse: >-",
+      "Use during security reviews.",
+      "groups:",
+      "- read",
+      "- command",
+      "source: project",
+      "rulesFiles:",
+      "- relativePath: security.md",
+      "  content: >",
+      "    # Security protocol",
+    ].join("\n"),
+  );
+  await cli(cwd, ["add", "mode/security-reviewer", "--registry", modeRegistryPath, "--yes"]);
+
+  assert.equal(
+    await fs.readFile(path.join(cwd, ".bob", "custom_modes.yaml"), "utf8"),
+    [
+      "customModes:",
+      "  - slug: security-reviewer",
+      "    name: Security Reviewer",
+      "    roleDefinition: >-",
+      "      Review the code for security issues.",
+      "      - Cite exact evidence.",
+      "        Include line numbers.",
+      "    whenToUse: >-",
+      "      Use during security reviews.",
+      "    groups:",
+      "      - read",
+      "      - command",
+      "    source: project",
+      "    rulesFiles:",
+      "      - relativePath: security.md",
+      "        content: >",
+      "          # Security protocol",
+      "",
+    ].join("\n"),
   );
 });
 

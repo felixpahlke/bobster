@@ -2,6 +2,18 @@
 
 const { BobsterError } = require("../error");
 
+const MODE_TOP_LEVEL_KEYS = new Set([
+  "slug",
+  "name",
+  "description",
+  "roleDefinition",
+  "whenToUse",
+  "groups",
+  "customInstructions",
+  "source",
+  "rulesFiles",
+]);
+
 function ensureNewline(value) {
   return value.endsWith("\n") ? value : `${value}\n`;
 }
@@ -14,8 +26,64 @@ function extractModeSlug(modeYaml) {
   return match[1];
 }
 
+function topLevelModeKey(line) {
+  const match = line.match(/^([A-Za-z][A-Za-z0-9_-]*):(?:\s|$)/);
+  return match && MODE_TOP_LEVEL_KEYS.has(match[1]) ? match[1] : null;
+}
+
+function isTopLevelBlockScalar(line) {
+  return Boolean(
+    topLevelModeKey(line) &&
+      /^[A-Za-z][A-Za-z0-9_-]*:\s*[>|][0-9+-]*\s*(?:#.*)?$/.test(line),
+  );
+}
+
+function leadingSpaces(line) {
+  return line.match(/^ */)[0].length;
+}
+
+function hasNestedTopLevelValue(line) {
+  return Boolean(topLevelModeKey(line) && /^[A-Za-z][A-Za-z0-9_-]*:\s*(?:#.*)?$/.test(line));
+}
+
+function normalizeNestedLines(lines) {
+  const indents = lines
+    .filter((line) => line.trim())
+    .map(leadingSpaces);
+  const minIndent = indents.length ? Math.min(...indents) : 2;
+  const indentShift = Math.max(0, 2 - minIndent);
+
+  return lines.map((line) => (line.trim() && indentShift ? `${" ".repeat(indentShift)}${line}` : line));
+}
+
+function normalizeModeYaml(modeYaml) {
+  const lines = modeYaml.replace(/\r\n/g, "\n").trim().split("\n");
+  const normalized = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    normalized.push(line);
+
+    if (!isTopLevelBlockScalar(line) && !hasNestedTopLevelValue(line)) {
+      continue;
+    }
+
+    const nestedLines = [];
+    index += 1;
+    while (index < lines.length && !topLevelModeKey(lines[index])) {
+      nestedLines.push(lines[index]);
+      index += 1;
+    }
+    index -= 1;
+
+    normalized.push(...normalizeNestedLines(nestedLines));
+  }
+
+  return normalized.join("\n");
+}
+
 function modeYamlToListBlock(modeYaml) {
-  const trimmed = modeYaml.replace(/\r\n/g, "\n").trim();
+  const trimmed = normalizeModeYaml(modeYaml);
   if (!trimmed) {
     throw new BobsterError("Mode YAML is empty.");
   }

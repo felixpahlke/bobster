@@ -11,3 +11,4 @@
 - Interactive `bobster add <bare-term>` now opens a picker when discovery search finds alternatives beyond an exact item name.
 - `bobster registry add` now manages global registry config; SSH Git shorthands use a global partial Git cache and do not create project checkouts.
 - Interactive prompt Ctrl+C cancellation is normalized to Bobster cancellation errors instead of leaking readline stack traces.
+- Mode installs now normalize unindented top-level mode field content before merging into `custom_modes.yaml`, fixing malformed imported scalars and lists.
