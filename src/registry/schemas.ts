@@ -24,7 +24,7 @@ const MANIFEST_FIELDS = new Set([
   "origin",
   ...DISCOVERY_FIELDS,
 ]);
-const INDEX_FIELDS = new Set([...MANIFEST_FIELDS, "license", "path"]);
+const INDEX_FIELDS = new Set([...MANIFEST_FIELDS, "path"]);
 const STATUSES = new Set(["stable", "experimental", "deprecated"]);
 
 function normalizeType(type) {

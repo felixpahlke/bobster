@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-27T10:43:24.734Z",
+  "generatedAt": "2026-04-27T10:58:34.299Z",
   "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
   "items": [
     {
@@ -8,7 +8,6 @@
       "type": "mode",
       "version": "0.1.0",
       "description": "A direct, simple communication mode for Bob.",
-      "license": "MIT",
       "tags": [
         "communication",
         "simple",
@@ -40,7 +39,6 @@
       "type": "rule",
       "version": "0.1.0",
       "description": "Prevent credentials, tokens, private keys, and sensitive local details from entering the repo.",
-      "license": "MIT",
       "tags": [
         "security",
         "secrets",
@@ -73,7 +71,6 @@
       "type": "rule",
       "version": "0.1.0",
       "description": "OpenShift safety guardrails for secure cluster troubleshooting and change execution.",
-      "license": "MIT",
       "tags": [
         "openshift",
         "security",
@@ -108,7 +105,6 @@
       "type": "rule",
       "version": "0.1.0",
       "description": "Keep TypeScript changes typed, local, and easy to verify.",
-      "license": "MIT",
       "tags": [
         "typescript",
         "quality",
@@ -142,7 +138,6 @@
       "type": "skill",
       "version": "0.1.0",
       "description": "Review changes for bugs, regressions, missing tests, and maintainability risks.",
-      "license": "MIT",
       "tags": [
         "review",
         "quality",
@@ -177,7 +172,6 @@
       "type": "skill",
       "version": "0.1.0",
       "description": "Build customer care MCP servers for watsonx Orchestrate with transactions, widgets, authentication, context, and reference implementations.",
-      "license": "MIT",
       "tags": [
         "mcp",
         "customer-care",
@@ -226,7 +220,6 @@
       "type": "skill",
       "version": "0.1.0",
       "description": "Create distinctive, production-grade frontend interfaces with high design quality.",
-      "license": "MIT",
       "tags": [
         "frontend",
         "design",
@@ -261,7 +254,6 @@
       "type": "skill",
       "version": "0.1.0",
       "description": "Generate business-facing Standard Operating Procedures from BPMN, n8n, Langflow, workflow models, or process descriptions.",
-      "license": "MIT",
       "tags": [
         "sop",
         "workflow",
@@ -308,7 +300,6 @@
       "type": "skill",
       "version": "0.1.0",
       "description": "Work with watsonx Orchestrate, wxo, orchestrate, and the orchestrate ADK CLI.",
-      "license": "MIT",
       "tags": [
         "watsonx",
         "orchestrate",

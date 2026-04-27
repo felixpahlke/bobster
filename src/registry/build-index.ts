@@ -61,7 +61,6 @@ async function buildRegistryIndex(options: any = {}) {
         type: manifest.type,
         version: manifest.version,
         description: manifest.description,
-        license: "MIT",
         tags: manifest.tags,
         ...(manifest.topics ? { topics: manifest.topics } : {}),
         ...(manifest.aliases ? { aliases: manifest.aliases } : {}),
