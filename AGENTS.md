@@ -16,3 +16,5 @@ Bobster is an independent community project. It is not an official IBM project, 
 ## Extra Info
 
 It is possible that multiple agents will be working on this project in parallel - if you notice changes on files that you also touched, do not revert other functionality that has been added by someone else.
+
+Use concise Conventional Commit messages, such as `feat(scope): headline` or `refactor(scope): headline`. Add short bullet lines below only when a commit contains multiple separate changes.

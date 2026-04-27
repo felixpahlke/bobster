@@ -3,16 +3,14 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { defaultConfig, defaultPaths, resolveConfigPath } = require("../config/defaults");
-const { BobsterError } = require("../error");
 const { resolveProjectPath } = require("../fs/safe-path");
 const {
   addPlannedWrite,
-  applyWritePlan,
   createWritePlan,
   formatPlan,
   readFileIfExists,
 } = require("../fs/write-plan");
-const { confirm } = require("../prompt");
+const { runPlannedOperation } = require("./planned-operation");
 
 async function pathExists(filePath) {
   try {
@@ -81,64 +79,45 @@ async function runInit(context) {
     }
   }
 
-  if (flags.json) {
-    io.out(
-      JSON.stringify(
-        {
-          target,
-          creates: plan.creates.map((item) => item.displayPath),
-          updates: plan.updates.map((item) => item.displayPath),
-          conflicts: plan.conflicts.map((item) => item.displayPath),
-          directories: dirs.map((dir) => path.relative(cwd, dir)),
-          preserved,
-        },
-        null,
-        2,
-      ),
-    );
-  } else {
-    const planText = formatPlan(plan, { theme: context.theme });
-    if (planText) {
-      io.out(planText);
-    }
-    io.out(`Directories to ensure:\n  ${dirs.map((dir) => path.relative(cwd, dir)).join("\n  ")}`);
-    if (preserved.length) {
-      io.out(`Existing paths preserved:\n  ${preserved.join("\n  ")}`);
-    }
-  }
-
-  if (flags.dryRun) {
-    return;
-  }
-
-  if (plan.conflicts.length && !flags.force) {
-    const accepted = await confirm("Overwrite conflicting initialization files?", {
-      input: io.stdin,
-      output: io.stderr,
-    });
-    if (!accepted) {
-      throw new BobsterError("Initialization cancelled.");
-    }
-  }
-
-  if (!flags.yes && !flags.force) {
-    const accepted = await confirm("Initialize Bobster project?", {
-      input: io.stdin,
-      output: io.stderr,
-    });
-    if (!accepted) {
-      throw new BobsterError("Initialization cancelled.");
-    }
-  }
-
-  for (const dir of dirs) {
-    await fs.mkdir(dir, { recursive: true });
-  }
-  await applyWritePlan(plan, { forceConflicts: true });
-
-  if (!flags.json) {
-    io.out("Bobster initialized.");
-  }
+  await runPlannedOperation(context, {
+    plan,
+    json: {
+      target,
+      creates: plan.creates.map((item) => item.displayPath),
+      updates: plan.updates.map((item) => item.displayPath),
+      conflicts: plan.conflicts.map((item) => item.displayPath),
+      directories: dirs.map((dir) => path.relative(cwd, dir)),
+      preserved,
+    },
+    print() {
+      const planText = formatPlan(plan, { theme: context.theme });
+      if (planText) {
+        io.out(planText);
+      }
+      io.out(`Directories to ensure:\n  ${dirs.map((dir) => path.relative(cwd, dir)).join("\n  ")}`);
+      if (preserved.length) {
+        io.out(`Existing paths preserved:\n  ${preserved.join("\n  ")}`);
+      }
+    },
+    confirmSteps: () => [
+      {
+        when: plan.conflicts.length && !flags.force,
+        message: "Overwrite conflicting initialization files?",
+        cancelMessage: "Initialization cancelled.",
+      },
+      {
+        when: !flags.yes && !flags.force,
+        message: "Initialize Bobster project?",
+        cancelMessage: "Initialization cancelled.",
+      },
+    ],
+    async beforeApply() {
+      for (const dir of dirs) {
+        await fs.mkdir(dir, { recursive: true });
+      }
+    },
+    successMessage: "Bobster initialized.",
+  });
 }
 
 module.exports = {

@@ -1,11 +1,10 @@
 "use strict";
 
 const { BobsterError } = require("../error");
-const { loadConfig } = require("../config/load-config");
 const { formatItemId } = require("../output");
 const { installsRuleAsDirectory } = require("../installers/planner");
-const { fetchRegistryIndex } = require("../registry/fetch-index");
-const { resolveRegistryItem } = require("../registry/resolve-item");
+const { loadRegistryCommandContext } = require("./context");
+const { resolveRegistryItemForCommand } = require("./resolve");
 
 function installTarget(config, item) {
   if (item.type === "skill") {
@@ -21,15 +20,16 @@ function installTarget(config, item) {
 }
 
 async function runInfo(context) {
-  const { args, cwd, flags, io } = context;
+  const { args, flags, io } = context;
   const name = args[0];
   if (!name) {
     throw new BobsterError("Usage: bobster info <name>");
   }
 
-  const config = loadConfig(cwd, flags);
-  const registryContext = await fetchRegistryIndex(config.registry, { cwd });
-  const item = resolveRegistryItem(registryContext.index, name, { type: flags.type });
+  const { config, registryContext } = await loadRegistryCommandContext(context);
+  const item = await resolveRegistryItemForCommand(context, registryContext, name, {
+    message: "Did you mean one of these? Select an item to inspect",
+  });
 
   if (flags.json) {
     io.out(JSON.stringify(item, null, 2));

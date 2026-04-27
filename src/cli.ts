@@ -17,7 +17,25 @@ const { runList } = require("./commands/list");
 const { runRegistry } = require("./commands/registry");
 const { runRemove } = require("./commands/remove");
 const { runSearch } = require("./commands/search");
+const { runShow } = require("./commands/show");
 const { runUpdate } = require("./commands/update");
+
+const COMMAND_HANDLERS = {
+  init: runInit,
+  list: runList,
+  search: runSearch,
+  info: runInfo,
+  show: runShow,
+  add: runAdd,
+  learn: (context) => runAdd(context, { commandName: "learn", forceType: "skill" }),
+  remove: runRemove,
+  forget: runRemove,
+  update: runUpdate,
+  completion: runCompletion,
+  registry: runRegistry,
+  "registry:build": (context) => runRegistry({ ...context, args: ["build", ...context.args] }),
+  "registry:validate": (context) => runRegistry({ ...context, args: ["validate", ...context.args] }),
+};
 
 function createDefaultIo() {
   return {
@@ -122,49 +140,11 @@ async function main(argv: string[], options: any = {}) {
     return 0;
   }
 
-  switch (parsed.command) {
-    case "init":
-      await runInit(context);
-      break;
-    case "list":
-      await runList(context);
-      break;
-    case "search":
-      await runSearch(context);
-      break;
-    case "info":
-      await runInfo(context);
-      break;
-    case "add":
-      await runAdd(context);
-      break;
-    case "learn":
-      await runAdd(context, { commandName: "learn", forceType: "skill" });
-      break;
-    case "remove":
-      await runRemove(context);
-      break;
-    case "forget":
-      await runRemove(context);
-      break;
-    case "update":
-      await runUpdate(context);
-      break;
-    case "completion":
-      await runCompletion(context);
-      break;
-    case "registry":
-      await runRegistry(context);
-      break;
-    case "registry:build":
-      await runRegistry({ ...context, args: ["build", ...context.args] });
-      break;
-    case "registry:validate":
-      await runRegistry({ ...context, args: ["validate", ...context.args] });
-      break;
-    default:
-      throw new BobsterError(`Unknown command: ${parsed.command}\n\n${helpText(theme)}`);
+  const handler = COMMAND_HANDLERS[parsed.command];
+  if (!handler) {
+    throw new BobsterError(`Unknown command: ${parsed.command}\n\n${helpText(theme)}`);
   }
+  await handler(context);
 
   await maybeSuggestUpdate(parsed, io, theme, options);
 

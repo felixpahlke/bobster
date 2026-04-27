@@ -131,8 +131,11 @@ test("help is available globally, per command, and through help <command>", asyn
 
   const general = await cli(cwd, ["--help"]);
   assert.match(general.stdout, /Bobster/);
+  assert.match(general.stdout, /CORE COMMANDS/);
+  assert.match(general.stdout, /add:\s+Install a skill, rule, or mode/);
   assert.match(general.stdout, /bobster <command> --help/);
-  assert.match(general.stdout, /bobster completion/);
+  assert.doesNotMatch(general.stdout, /\[--target/);
+  assert.doesNotMatch(general.stdout, /\[--dry-run/);
 
   const add = await cli(cwd, ["add", "--help"]);
   assert.match(add.stdout, /Install one registry item/);
@@ -140,6 +143,10 @@ test("help is available globally, per command, and through help <command>", asyn
 
   const update = await cli(cwd, ["help", "update"]);
   assert.match(update.stdout, /Reinstall installed items/);
+
+  const show = await cli(cwd, ["show", "--help"]);
+  assert.match(show.stdout, /Print the registry item contents/);
+  assert.match(show.stdout, /--all/);
 
   const registry = await cli(cwd, ["registry", "--help"]);
   assert.match(registry.stdout, /build\|validate/);
@@ -166,6 +173,9 @@ test("completion suggests registry skills and rules", async () => {
   assert.match(rules.stdout, /^rule\/no-secrets$/m);
   assert.match(rules.stdout, /^rule\/typescript-quality$/m);
   assert.doesNotMatch(rules.stdout, /^skill\/frontend-design$/m);
+
+  const show = await cli(cwd, ["__complete", "--", "show", "front"]);
+  assert.match(show.stdout, /^frontend-design$/m);
 });
 
 test("completion hooks are printable and avoid filename fallback", async () => {
@@ -319,18 +329,16 @@ test("add installs skill, rule, and mode and writes a lockfile", async () => {
   await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
   await cli(cwd, ["add", "rule/no-secrets", "--yes"]);
   await cli(cwd, ["add", "mode/grug-brained", "--yes"]);
-  await cli(cwd, ["add", "mode/planner", "--yes"]);
 
   await fs.access(path.join(cwd, ".bob", "skills", "frontend-design", "SKILL.md"));
   assert.match(await fs.readFile(path.join(cwd, ".bob", "rules", "no-secrets.md"), "utf8"), /Do not commit credentials/);
   const modes = await fs.readFile(path.join(cwd, ".bob", "custom_modes.yaml"), "utf8");
   assert.match(modes, /slug: grug-brained/);
-  assert.match(modes, /slug: planner/);
 
   const lockfile = await readJson(path.join(cwd, "bobster-lock.json"));
   assert.deepEqual(
     lockfile.items.map((item) => `${item.type}/${item.name}`).sort(),
-    ["mode/grug-brained", "mode/planner", "rule/no-secrets", "skill/frontend-design"],
+    ["mode/grug-brained", "rule/no-secrets", "skill/frontend-design"],
   );
 });
 
@@ -403,6 +411,50 @@ test("watsonx Orchestrate skill is searchable and installable", async () => {
     "utf8",
   );
   assert.match(skill, /uv run orchestrate --help/);
+});
+
+test("add suggests close registry names for typos", async () => {
+  const cwd = await tempProject();
+
+  await assert.rejects(
+    () => cli(cwd, ["add", "frntend-design", "--registry", registryPath, "--yes"]),
+    /Did you mean one of these\?[\s\S]*skill\/frontend-design/,
+  );
+});
+
+test("installed item commands suggest close installed names for typos", async () => {
+  const cwd = await tempProject();
+  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
+
+  await assert.rejects(
+    () => cli(cwd, ["remove", "frntend-design", "--yes"]),
+    /Did you mean one of these\?[\s\S]*skill\/frontend-design/,
+  );
+});
+
+test("show prints registry item contents", async () => {
+  const cwd = await tempProject();
+  const output = await cli(cwd, ["show", "rule/no-secrets", "--registry", registryPath]);
+
+  assert.match(output.stdout, /Do not commit credentials/);
+  assert.doesNotMatch(output.stdout, /^---/m);
+
+  const json = await cli(cwd, ["show", "rule/no-secrets", "--registry", registryPath, "--json"]);
+  const parsed = JSON.parse(json.stdout);
+  assert.equal(parsed.item.name, "no-secrets");
+  assert.equal(parsed.files[0].path, "RULE.md");
+  assert.match(parsed.files[0].content, /Do not commit credentials/);
+});
+
+test("show all prints every manifest file with headers", async () => {
+  const cwd = await tempProject();
+  const bundledRegistryPath = await writeBundledRuleRegistry(cwd);
+  const output = await cli(cwd, ["show", "rule/bundled-rule", "--registry", bundledRegistryPath, "--all"]);
+
+  assert.match(output.stdout, /--- rule\/bundled-rule: RULE\.md ---/);
+  assert.match(output.stdout, /--- rule\/bundled-rule: references\/details\.md ---/);
+  assert.match(output.stdout, /Extra rule context/);
 });
 
 test("reinstall is idempotent and add without force refuses conflicts", async () => {

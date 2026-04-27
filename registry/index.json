@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-24T12:05:39.215Z",
+  "generatedAt": "2026-04-27T08:39:54.844Z",
   "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
   "items": [
     {
@@ -21,23 +21,6 @@
       "entry": "mode.yaml"
     },
     {
-      "name": "planner",
-      "type": "mode",
-      "version": "0.1.0",
-      "description": "Plan first, surface tradeoffs, and keep implementation steps explicit.",
-      "license": "MIT",
-      "tags": [
-        "planning",
-        "architecture",
-        "workflow"
-      ],
-      "path": "modes/planner",
-      "files": [
-        "mode.yaml"
-      ],
-      "entry": "mode.yaml"
-    },
-    {
       "name": "no-secrets",
       "type": "rule",
       "version": "0.1.0",
@@ -51,6 +34,24 @@
       "path": "rules/no-secrets",
       "files": [
         "RULE.md"
+      ],
+      "entry": "RULE.md"
+    },
+    {
+      "name": "openshift-with-bob",
+      "type": "rule",
+      "version": "0.1.0",
+      "description": "OpenShift safety guardrails for secure cluster troubleshooting and change execution.",
+      "license": "MIT",
+      "tags": [
+        "openshift",
+        "security",
+        "devops"
+      ],
+      "path": "rules/openshift-with-bob",
+      "files": [
+        "RULE.md",
+        "application-samples/helloworld/deployment.yaml"
       ],
       "entry": "RULE.md"
     },

@@ -3,55 +3,25 @@
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
-const { ITEM_TYPES, PACKAGE_ROOT } = require("../constants");
+const { PACKAGE_ROOT } = require("../constants");
 const { loadConfig } = require("../config/load-config");
 const { BobsterError } = require("../error");
 const { readLockfile } = require("../lockfile/lockfile");
 const { confirm } = require("../prompt");
 const { fetchRegistryIndex } = require("../registry/fetch-index");
 const { normalizeType } = require("../registry/schemas");
-
-const COMMANDS = [
-  "init",
-  "list",
-  "search",
-  "info",
-  "add",
-  "learn",
-  "remove",
-  "forget",
-  "update",
-  "completion",
-  "registry",
-  "registry:build",
-  "registry:validate",
-  "help",
-];
-
-const SUPPORTED_SHELLS = ["zsh", "bash", "fish"];
-const COMPLETION_SUBCOMMANDS = ["install", ...SUPPORTED_SHELLS];
-const REGISTRY_SUBCOMMANDS = ["build", "validate"];
-const GLOBAL_FLAGS = ["--help", "--version"];
-const VALUE_FLAGS = new Set(["--target", "--registry", "--type", "--base-url"]);
+const {
+  COMMAND_FLAGS,
+  COMMANDS,
+  COMPLETION_SUBCOMMANDS,
+  GLOBAL_FLAGS,
+  ITEM_TYPES,
+  REGISTRY_SUBCOMMANDS,
+  SUPPORTED_SHELLS,
+  VALUE_FLAGS,
+} = require("./metadata");
 const MANAGED_START = "# >>> bobster completion >>>";
 const MANAGED_END = "# <<< bobster completion <<<";
-
-const COMMAND_FLAGS = {
-  init: ["--target", "--registry", "--yes", "--force", "--dry-run", "--json", "--help"],
-  list: ["--type", "--installed", "--registry", "--json", "--help"],
-  search: ["--type", "--registry", "--json", "--help"],
-  info: ["--type", "--registry", "--json", "--help"],
-  add: ["--type", "--dry-run", "--yes", "--force", "--json", "--help"],
-  learn: ["--dry-run", "--yes", "--force", "--json", "--help"],
-  remove: ["--type", "--dry-run", "--yes", "--json", "--help"],
-  forget: ["--dry-run", "--yes", "--json", "--help"],
-  update: ["--type", "--dry-run", "--yes", "--json", "--help"],
-  completion: ["--dry-run", "--yes", "--json", "--help"],
-  registry: ["--base-url", "--check", "--json", "--help"],
-  "registry:build": ["--base-url", "--check", "--json", "--help"],
-  "registry:validate": ["--json", "--help"],
-  help: [],
-};
 
 function supportedShell(shell) {
   return SUPPORTED_SHELLS.includes(shell);
@@ -430,7 +400,7 @@ async function installedItems(cwd) {
 async function completeName(command, cwd, parsed, current) {
   const type = parsedType(parsed.flags);
 
-  if (command === "add" || command === "info") {
+  if (command === "add" || command === "info" || command === "show") {
     const items = await registryItems(cwd, parsed.flags);
     return itemSuggestions(items, {
       allowedTypes: ITEM_TYPES,

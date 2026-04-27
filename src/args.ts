@@ -1,8 +1,7 @@
 "use strict";
 
 const { BobsterError } = require("./error");
-
-const VALUE_FLAGS = new Set(["--target", "--registry", "--type", "--base-url"]);
+const { VALUE_FLAGS } = require("./commands/metadata");
 
 function toFlagName(flag) {
   return flag
@@ -67,6 +66,9 @@ function parseArgv(argv: string[]) {
           break;
         case "--installed":
           flags.installed = true;
+          break;
+        case "--all":
+          flags.all = true;
           break;
         case "--check":
           flags.check = true;

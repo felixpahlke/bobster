@@ -8,32 +8,30 @@ Bobster is an independent community project. It is not an official IBM project, 
 
 ## Install
 
-Use the latest published CLI without installing it globally:
-
-```sh
-npx bobster-cli@latest <command>
-```
-
-For a persistent global command:
+Install the CLI globally:
 
 ```sh
 npm install -g bobster-cli@latest
 ```
 
+Install shell completions:
+
+```sh
+bobster completion install
+```
+
 ## Quick Start
 
 ```sh
-bobster init
 bobster search frontend
 bobster info skill/frontend-design
 bobster add skill/frontend-design
 bobster list --installed
 ```
 
-`bobster init` creates:
+By default, Bobster installs into `.bob/`:
 
 ```txt
-bobster.json
 .bob/
   skills/
   rules/
@@ -41,6 +39,8 @@ bobster.json
 ```
 
 Installed assets are tracked in `bobster-lock.json` so they can be listed, removed, and updated later.
+
+Use `bobster init` only when you want to write a `bobster.json` config, set a custom registry, or use a target folder other than `.bob/`.
 
 ## Commands
 
@@ -82,25 +82,13 @@ Single-file rules install as `.bob/rules/<name>.md`. Rule items with multiple fi
 
 Bobster ships shell completion scripts for commands, flags, `--type` values, registry item names, and installed item names. After installing the matching shell hook, `bobster add wats<Tab>` completes to `watsonx-orchestrate`.
 
-For zsh:
+Install completion for your current shell:
 
 ```sh
-bobster completion install zsh
+bobster completion install
 ```
 
-For bash:
-
-```sh
-bobster completion install bash
-```
-
-For fish:
-
-```sh
-bobster completion install fish
-```
-
-To print a hook without installing it:
+You can also print a hook without installing it:
 
 ```sh
 bobster completion zsh

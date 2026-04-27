@@ -1,0 +1,9 @@
+{
+  "name": "openshift-with-bob",
+  "type": "rule",
+  "version": "0.1.0",
+  "description": "OpenShift safety guardrails for secure cluster troubleshooting and change execution.",
+  "tags": ["openshift", "security", "devops"],
+  "files": ["RULE.md", "application-samples/helloworld/deployment.yaml"],
+  "entry": "RULE.md"
+}
