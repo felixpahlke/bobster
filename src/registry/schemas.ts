@@ -12,8 +12,20 @@ const TYPE_ALIASES = {
   modes: "mode",
   mode: "mode",
 };
-const MANIFEST_FIELDS = new Set(["name", "type", "version", "description", "tags", "files", "entry", "origin"]);
+const DISCOVERY_FIELDS = ["topics", "aliases", "keywords", "status"];
+const MANIFEST_FIELDS = new Set([
+  "name",
+  "type",
+  "version",
+  "description",
+  "tags",
+  "files",
+  "entry",
+  "origin",
+  ...DISCOVERY_FIELDS,
+]);
 const INDEX_FIELDS = new Set([...MANIFEST_FIELDS, "license", "path"]);
+const STATUSES = new Set(["stable", "experimental", "deprecated"]);
 
 function normalizeType(type) {
   const normalized = TYPE_ALIASES[String(type || "").toLowerCase()];
@@ -59,6 +71,19 @@ function validateManifest(manifest, options: any = {}) {
 
   if (!Array.isArray(manifest.tags) || !manifest.tags.every((tag) => typeof tag === "string")) {
     errors.push("tags must be an array of strings");
+  }
+
+  for (const field of ["topics", "aliases", "keywords"]) {
+    if (
+      manifest[field] !== undefined &&
+      (!Array.isArray(manifest[field]) || !manifest[field].every((value) => typeof value === "string"))
+    ) {
+      errors.push(`${field} must be an array of strings`);
+    }
+  }
+
+  if (manifest.status !== undefined && !STATUSES.has(manifest.status)) {
+    errors.push("status must be one of stable, experimental, or deprecated");
   }
 
   if (manifest.origin !== undefined) {

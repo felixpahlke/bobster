@@ -1,7 +1,7 @@
 "use strict";
 
 const readline = require("node:readline/promises");
-const { Select } = require("enquirer");
+const { AutoComplete, Select } = require("enquirer");
 const { BobsterError } = require("./error");
 const { itemId } = require("./output");
 
@@ -42,7 +42,8 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
     return null;
   }
 
-  const prompt = new Select({
+  const Prompt = options.searchable ? AutoComplete : Select;
+  const prompt = new Prompt({
     choices,
     limit: options.limit || Math.min(10, choices.length),
     message,

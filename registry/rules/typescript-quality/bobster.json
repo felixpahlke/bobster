@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Keep TypeScript changes typed, local, and easy to verify.",
   "tags": ["typescript", "quality", "testing"],
+  "topics": ["typescript", "quality", "testing"],
+  "aliases": ["ts quality", "type safety"],
+  "keywords": ["types", "typecheck", "tests", "maintainability", "verification"],
+  "status": "stable",
   "files": ["RULE.md"],
   "entry": "RULE.md"
 }

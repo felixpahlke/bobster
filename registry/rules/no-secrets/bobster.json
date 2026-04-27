@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Prevent credentials, tokens, private keys, and sensitive local details from entering the repo.",
   "tags": ["security", "secrets", "git"],
+  "topics": ["security"],
+  "aliases": ["appsec", "secure coding", "credential hygiene"],
+  "keywords": ["credentials", "tokens", "private keys", "secret scanning", "leaks"],
+  "status": "stable",
   "files": ["RULE.md"],
   "entry": "RULE.md"
 }

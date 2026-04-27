@@ -165,7 +165,7 @@ test("help is available globally, per command, and through help <command>", asyn
   const general = await cli(cwd, ["--help"]);
   assert.match(general.stdout, /Bobster/);
   assert.match(general.stdout, /CORE COMMANDS/);
-  assert.match(general.stdout, /add:\s+Install a skill, rule, or mode/);
+  assert.match(general.stdout, /add:\s+Install or interactively pick an item/);
   assert.match(general.stdout, /bobster <command> --help/);
   assert.doesNotMatch(general.stdout, /\[--target/);
   assert.doesNotMatch(general.stdout, /\[--dry-run/);
@@ -237,6 +237,9 @@ test("completion suggests registry skills and rules", async () => {
 
   const show = await cli(cwd, ["__complete", "--", "show", "front"]);
   assert.match(show.stdout, /^frontend-design$/m);
+
+  const topic = await cli(cwd, ["__complete", "--", "list", "sec"]);
+  assert.match(topic.stdout, /^security$/m);
 });
 
 test("completion hooks are printable and avoid filename fallback", async () => {
@@ -359,6 +362,24 @@ test("registry manifests allow origin provenance metadata", () => {
         importedAt: "2026-04-27T00:00:00.000Z",
         notes: "Imported for private review.",
       },
+    }),
+  );
+});
+
+test("registry manifests allow discovery metadata", () => {
+  assert.doesNotThrow(() =>
+    validateManifest({
+      name: "discoverable-item",
+      type: "rule",
+      version: "0.1.0",
+      description: "A rule with extra search and catalog metadata.",
+      tags: ["security"],
+      topics: ["security"],
+      aliases: ["appsec", "secure coding"],
+      keywords: ["credentials", "tokens"],
+      status: "stable",
+      files: ["RULE.md"],
+      entry: "RULE.md",
     }),
   );
 });
@@ -522,6 +543,27 @@ test("watsonx Orchestrate skill is searchable and installable", async () => {
     "utf8",
   );
   assert.match(skill, /uv run orchestrate --help/);
+});
+
+test("catalog and search use discovery metadata", async () => {
+  const cwd = await tempProject();
+  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+
+  const catalog = await cli(cwd, ["list", "--registry", registryPath]);
+  assert.match(catalog.stdout, /Popular Topics/);
+  assert.match(catalog.stdout, /Recommended/);
+  assert.match(catalog.stdout, /Security/);
+
+  const topic = await cli(cwd, ["list", "appsec", "--registry", registryPath]);
+  assert.match(topic.stdout, /rule\/no-secrets/);
+
+  const phrase = await cli(cwd, ["search", "secure coding", "--registry", registryPath]);
+  assert.match(phrase.stdout, /rule\/no-secrets/);
+
+  const info = await cli(cwd, ["info", "rule/no-secrets", "--registry", registryPath]);
+  assert.match(info.stdout, /Topics:/);
+  assert.match(info.stdout, /Aliases:/);
+  assert.match(info.stdout, /Status:/);
 });
 
 test("add suggests close registry names for typos", async () => {

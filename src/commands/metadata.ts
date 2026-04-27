@@ -22,8 +22,8 @@ const COMMAND_HELP = {
     ],
   },
   list: {
-    usage: "bobster list [options]",
-    description: "List registry items or installed lockfile items.",
+    usage: "bobster list [topic] [options]",
+    description: "Browse the registry catalog or list installed lockfile items.",
     options: [
       "--type <type>        Filter to skill, rule, or mode.",
       "--installed          List installed items from bobster-lock.json.",
@@ -32,8 +32,8 @@ const COMMAND_HELP = {
     ],
   },
   search: {
-    usage: "bobster search <query> [options]",
-    description: "Search names, descriptions, tags, and item types.",
+    usage: "bobster search [query] [options]",
+    description: "Search names, topics, aliases, keywords, tags, and item types.",
     options: [
       "--type <type>        Filter to skill, rule, or mode.",
       "--registry <url>     Registry index URL or local index path.",
@@ -61,8 +61,8 @@ const COMMAND_HELP = {
     ],
   },
   add: {
-    usage: "bobster add <name> [options]",
-    description: "Install one registry item into the configured Bob asset paths.",
+    usage: "bobster add [name] [options]",
+    description: "Install one registry item, or open an interactive picker.",
     options: [
       "--type <type>        Resolve an unqualified name as skill, rule, or mode.",
       "--dry-run           Show planned writes without changing files.",
@@ -174,13 +174,13 @@ const COMMAND_OVERVIEW_GROUPS = [
   {
     heading: "CORE COMMANDS",
     commands: [
-      ["search", "Search the registry"],
+      ["search", "Search or browse the registry"],
       ["info", "Show item metadata and install targets"],
       ["show", "Print item file contents"],
-      ["add", "Install a skill, rule, or mode"],
+      ["add", "Install or interactively pick an item"],
       ["remove", "Remove an installed item"],
       ["update", "Reinstall installed items from the registry"],
-      ["list", "List registry or installed items"],
+      ["list", "Browse registry topics or installed items"],
     ],
   },
   {

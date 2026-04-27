@@ -148,12 +148,21 @@ function fuzzyContains(value, query) {
   return true;
 }
 
+function fieldValues(item, field) {
+  return Array.isArray(item[field])
+    ? item[field].map((value) => String(value || "").toLowerCase()).filter(Boolean)
+    : [];
+}
+
 function suggestionScore(item, name) {
   const normalized = name.toLowerCase();
   const itemName = item.name.toLowerCase();
   const fullName = itemId(item, { includeRegistry: Boolean(item.registry) }).toLowerCase();
   const tags = (item.tags || []).map((tag) => tag.toLowerCase());
-  const haystack = `${fullName} ${tags.join(" ")} ${String(item.description || "").toLowerCase()}`;
+  const topics = fieldValues(item, "topics");
+  const aliases = fieldValues(item, "aliases");
+  const keywords = fieldValues(item, "keywords");
+  const haystack = `${fullName} ${topics.join(" ")} ${aliases.join(" ")} ${keywords.join(" ")} ${tags.join(" ")} ${String(item.description || "").toLowerCase()}`;
   const distance = editDistance(normalized, itemName);
   let score = 0;
 
@@ -161,6 +170,12 @@ function suggestionScore(item, name) {
   if (itemName.startsWith(normalized) || fullName.startsWith(normalized)) score += 90;
   if (itemName.includes(normalized) || fullName.includes(normalized)) score += 70;
   if (normalized.includes(itemName)) score += 60;
+  if (aliases.some((alias) => alias === normalized)) score += 85;
+  if (topics.some((topic) => topic === normalized)) score += 75;
+  if (keywords.some((keyword) => keyword === normalized)) score += 65;
+  if (aliases.some((alias) => alias.includes(normalized))) score += 45;
+  if (topics.some((topic) => topic.includes(normalized))) score += 40;
+  if (keywords.some((keyword) => keyword.includes(normalized))) score += 35;
   if (tags.some((tag) => tag.includes(normalized))) score += 35;
   if (fuzzyContains(haystack, normalized)) score += 20;
 

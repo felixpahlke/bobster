@@ -20,6 +20,10 @@ It is possible that multiple agents will be working on this project in parallel 
 
 Use concise Conventional Commit messages, such as `feat(scope): headline` or `refactor(scope): headline`. Add short bullet lines below only when a commit contains multiple separate changes.
 
+Do not commit by yourself, only if specifically asked to do so.
+
+When editing registry manifests, keep discovery metadata disciplined: `topics` are small human browse buckets, `tags` are flexible labels, `aliases` are phrases users might type, and `keywords` are hidden search helpers. Do not turn `topics` into a duplicate tag list; prefer 1-3 topics and follow the guidance in `CONTRIBUTING.md`.
+
 ## Project State
 
 Please keep a concise Log of recent changes you made in ./PROJECT_STATE.md. You can also list Roadmap / Todos here. Treat it as a scratchpad, but keep all entries short and concise and only add usefull information for other Agents / Developers.

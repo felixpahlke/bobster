@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Review changes for bugs, regressions, missing tests, and maintainability risks.",
   "tags": ["review", "quality", "testing"],
+  "topics": ["code-review", "quality", "testing"],
+  "aliases": ["pr review", "pull request review", "review code"],
+  "keywords": ["bugs", "regressions", "maintainability", "missing tests", "diff review"],
+  "status": "stable",
   "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }

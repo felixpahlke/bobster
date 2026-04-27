@@ -71,6 +71,7 @@ async function selectRegistryItemForCommand(context, items, options: any = {}) {
   return selectItem(options.message || "Select an item", items, {
     input: context.io.stdin,
     output: context.io.stderr,
+    searchable: options.searchable,
   });
 }
 

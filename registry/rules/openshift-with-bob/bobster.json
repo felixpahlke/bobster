@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "OpenShift safety guardrails for secure cluster troubleshooting and change execution.",
   "tags": ["openshift", "security", "devops"],
+  "topics": ["openshift", "security", "devops"],
+  "aliases": ["kubernetes safety", "oc safety", "cluster guardrails"],
+  "keywords": ["kubernetes", "cluster", "manifests", "troubleshooting", "change execution"],
+  "status": "stable",
   "files": ["RULE.md"],
   "entry": "RULE.md"
 }

@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "A direct, simple communication mode for Bob.",
   "tags": ["communication", "simple", "concise"],
+  "topics": ["communication"],
+  "aliases": ["concise", "plain language", "short answers"],
+  "keywords": ["brief", "simple", "direct", "tone"],
+  "status": "stable",
   "files": ["mode.yaml"],
   "entry": "mode.yaml"
 }

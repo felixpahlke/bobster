@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Create distinctive, production-grade frontend interfaces with high design quality.",
   "tags": ["frontend", "design", "ui", "react"],
+  "topics": ["frontend", "design"],
+  "aliases": ["ui design", "web design", "react ui"],
+  "keywords": ["interface", "layout", "responsive", "visual design", "polish"],
+  "status": "stable",
   "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }

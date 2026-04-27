@@ -3,11 +3,13 @@
 const { BobsterError } = require("../error");
 const { formatPlan, hasChanges } = require("../fs/write-plan");
 const { readLockfile, upsertLockItem, writeLockfile } = require("../lockfile/lockfile");
-const { formatItemId } = require("../output");
+const { compareDiscoveryItems, formatItemId } = require("../output");
 const { planInstall } = require("../installers/planner");
 const { loadRegistryCommandContext } = require("./context");
 const { runPlannedOperation } = require("./planned-operation");
-const { resolveRegistryItemForCommand } = require("./resolve");
+const { canPrompt } = require("../prompt");
+const { normalizeType } = require("../registry/schemas");
+const { resolveRegistryItemForCommand, selectRegistryItemForCommand } = require("./resolve");
 
 async function installRegistryItem(context: any, config: any, registryContext: any, item: any) {
   const { flags, io } = context;
@@ -57,13 +59,31 @@ async function installRegistryItem(context: any, config: any, registryContext: a
 
 async function runAdd(context: any, options: any = {}) {
   const { args } = context;
-  const rawName = args[0];
+  const { config, registryContext } = await loadRegistryCommandContext(context);
+  const rawName = args.join(" ").trim();
   if (!rawName) {
-    throw new BobsterError(`Usage: bobster ${options.commandName || "add"} <name>`);
+    if (!canPrompt(context)) {
+      throw new BobsterError(`Usage: bobster ${options.commandName || "add"} <name>\n\nRun bobster list to browse available items.`);
+    }
+
+    const type = options.forceType ? normalizeType(options.forceType) : context.flags.type
+      ? normalizeType(context.flags.type)
+      : null;
+    const items = registryContext.index.items
+      .filter((item) => !type || item.type === type)
+      .sort(compareDiscoveryItems);
+    const selected = await selectRegistryItemForCommand(context, items, {
+      message: "What should Bob help with?",
+      searchable: true,
+    });
+    if (!selected) {
+      throw new BobsterError("Install cancelled.");
+    }
+    await installRegistryItem(context, config, registryContext, selected);
+    return;
   }
 
   const name = options.forceType && !rawName.includes("/") ? `${options.forceType}/${rawName}` : rawName;
-  const { config, registryContext } = await loadRegistryCommandContext(context);
   const item = await resolveRegistryItemForCommand(context, registryContext, name, {
     message: "Did you mean one of these? Select an item to add",
   });

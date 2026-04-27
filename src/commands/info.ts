@@ -53,6 +53,15 @@ async function runInfo(context) {
       "",
       heading("Tags:"),
       `  ${(item.tags || []).join(", ")}`,
+      ...(item.topics?.length
+        ? ["", heading("Topics:"), `  ${item.topics.join(", ")}`]
+        : []),
+      ...(item.aliases?.length
+        ? ["", heading("Aliases:"), `  ${item.aliases.join(", ")}`]
+        : []),
+      ...(item.status
+        ? ["", heading("Status:"), `  ${item.status}`]
+        : []),
       "",
       heading("Files:"),
       ...item.files.map((file) => `  ${file}`),

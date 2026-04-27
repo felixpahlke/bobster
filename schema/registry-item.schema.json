@@ -24,6 +24,21 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "topics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "status": {
+      "enum": ["stable", "experimental", "deprecated"]
+    },
     "files": {
       "type": "array",
       "minItems": 1,

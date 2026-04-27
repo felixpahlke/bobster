@@ -23,6 +23,7 @@ bobster completion install
 ## Quick Start
 
 ```sh
+bobster list
 bobster search frontend
 bobster info skill/frontend-design
 bobster add skill/frontend-design
@@ -48,13 +49,13 @@ Run `bobster --help` for the first-level command overview:
 
 ```text
 CORE COMMANDS
-  search:             Search the registry
+  search:             Search or browse the registry
   info:               Show item metadata and install targets
   show:               Print item file contents
-  add:                Install a skill, rule, or mode
+  add:                Install or interactively pick an item
   remove:             Remove an installed item
   update:             Reinstall installed items from the registry
-  list:               List registry or installed items
+  list:               Browse registry topics or installed items
 
 SETUP COMMANDS
   completion:         Install or print shell completions
@@ -93,6 +94,18 @@ Aliases:
 bobster learn frontend-design
 bobster forget skill/frontend-design
 ```
+
+Discovery commands accept normal words. Use `bobster list` for a small catalog, `bobster list security` to narrow by topic, `bobster search appsec` to search aliases and keywords, or run `bobster add` in an interactive terminal to pick from a searchable list.
+
+Registry items use a few discovery fields:
+
+- `topics`: small browse buckets shown by `bobster list`, such as `security`, `frontend`, `devops`, `industry`, or `aerospace`.
+- `tags`: flexible descriptive labels.
+- `aliases`: alternate phrases people might type.
+- `keywords`: extra search terms that do not need to be displayed.
+- `status`: `stable`, `experimental`, or `deprecated`.
+
+Topics are not hard-coded in the CLI. Bobster builds the catalog from the topics present in the configured registry or registries.
 
 Single-file rules install as `.bob/rules/<name>.md`. Rule items with multiple files or nested paths install as `.bob/rules/<name>/...`.
 
@@ -183,6 +196,10 @@ Each item manifest lists the files that belong to the item:
   "version": "0.1.0",
   "description": "Example project guidance for Bob.",
   "tags": ["example"],
+  "topics": ["security"],
+  "aliases": ["appsec", "secure coding"],
+  "keywords": ["credentials", "tokens", "private keys"],
+  "status": "stable",
   "files": ["RULE.md"],
   "entry": "RULE.md",
   "origin": {

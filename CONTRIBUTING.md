@@ -54,6 +54,10 @@ Example manifest:
   "version": "0.1.0",
   "description": "Help Bob do a specific reusable task.",
   "tags": ["example", "workflow"],
+  "topics": ["example"],
+  "aliases": ["sample workflow"],
+  "keywords": ["discovery", "catalog"],
+  "status": "experimental",
   "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }
@@ -101,6 +105,10 @@ Before opening a PR, check that:
 - `type` is one of `skill`, `rule`, or `mode`.
 - `description` clearly says what the item helps Bob do.
 - `tags` are useful for search.
+- `topics` use human-facing words people would browse, such as `security`, `frontend`, or `testing`.
+- `aliases` include alternate phrases users might type.
+- `keywords` include extra search terms that do not need to be displayed.
+- `status` is one of `stable`, `experimental`, or `deprecated`.
 - Every path in `files` exists in the item folder.
 - `entry` is included in `files`.
 - `bobster.json` does not include a `license` field; registry content is covered by this repository's MIT license.
@@ -108,6 +116,30 @@ Before opening a PR, check that:
 - Content is original, licensed for contribution under this repository's MIT license, or clearly allowed by its license.
 
 Keep registry items focused. A good item should be reusable across projects, not tailored to one private codebase.
+
+## Discovery Metadata
+
+Bobster discovery is intentionally lightweight. The CLI does not enforce a closed taxonomy; it builds catalog topics from the manifests in the active registry or registries. Contributors should still keep metadata consistent so browsing stays useful.
+
+Use these fields with distinct jobs:
+
+- `topics`: curated browse buckets. Use 1 to 3 short lowercase values. The first topic should usually be broad, such as `security`, `frontend`, `devops`, `testing`, `documentation`, `ai`, `data`, or `industry`. Add a specific topic when useful, such as `openshift`, `watsonx`, `aerospace`, or `healthcare`.
+- `tags`: flexible descriptive labels for technologies, standards, tools, and traits.
+- `aliases`: phrases a person might type, such as `appsec`, `secure coding`, `ci/cd`, `pr review`, or `flight software`.
+- `keywords`: extra search terms that help ranking but do not need to be displayed.
+- `status`: use `stable` for reviewed reusable items, `experimental` for imports or narrow items, and `deprecated` for items kept only for compatibility.
+
+Do not use item type or source labels as topics, such as `skill`, `rule`, `mode`, `core`, `custom`, or `premium`. Industry-specific items should normally use both a broad and specific topic:
+
+```json
+{
+  "topics": ["industry", "aerospace"],
+  "tags": ["aviation", "do-178c", "avionics"],
+  "aliases": ["flight software", "aviation"],
+  "keywords": ["satellite", "safety critical", "certification"],
+  "status": "experimental"
+}
+```
 
 ## Optional: Prepare the Registry
 

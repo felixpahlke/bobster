@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Work with watsonx Orchestrate, wxo, orchestrate, and the orchestrate ADK CLI.",
   "tags": ["watsonx", "orchestrate", "wxo", "adk", "agents", "tools"],
+  "topics": ["watsonx", "agents", "tools"],
+  "aliases": ["wxo", "watsonx orchestrate", "orchestrate adk"],
+  "keywords": ["agent builder", "tools", "adk cli", "assistant", "watsonx"],
+  "status": "stable",
   "files": ["SKILL.md"],
   "entry": "SKILL.md"
 }

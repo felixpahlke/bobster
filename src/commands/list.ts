@@ -1,14 +1,13 @@
 "use strict";
 
-const { installRegistryItem } = require("./add");
-const { formatGroupedItems, formatItemRows } = require("../output");
+const { formatCatalog, formatItemRows } = require("../output");
 const { normalizeType } = require("../registry/schemas");
+const { searchItems } = require("../registry/search-items");
 const { readLockfile } = require("../lockfile/lockfile");
 const { loadRegistryCommandContext } = require("./context");
-const { selectRegistryItemForCommand } = require("./resolve");
 
 async function runList(context) {
-  const { cwd, flags, io } = context;
+  const { args, cwd, flags, io } = context;
 
   if (flags.installed) {
     const lockfile = await readLockfile(cwd);
@@ -26,21 +25,20 @@ async function runList(context) {
 
   const registry = await loadRegistryCommandContext(context);
   const registryContext = registry.registryContext;
-  const items = flags.type
+  let items = flags.type
     ? registryContext.index.items.filter((item) => item.type === normalizeType(flags.type))
     : registryContext.index.items;
+  const query = args.join(" ").trim();
+  if (query) {
+    items = searchItems(items, query, { type: flags.type });
+  }
 
   if (flags.json) {
     io.out(JSON.stringify(items, null, 2));
   } else {
-    const selected = await selectRegistryItemForCommand(context, items, {
-      message: "Select an item to add",
-    });
-    if (selected) {
-      await installRegistryItem(context, registry.config, registryContext, selected);
-      return;
-    }
-    io.out(formatGroupedItems(items, { theme: context.theme }));
+    io.out(query
+      ? formatItemRows(items, { showTopics: true, theme: context.theme })
+      : formatCatalog(items, { theme: context.theme }));
   }
 }
 

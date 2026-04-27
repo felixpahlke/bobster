@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-27T08:42:20.208Z",
+  "generatedAt": "2026-04-27T10:25:10.128Z",
   "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
   "items": [
     {
@@ -14,6 +14,21 @@
         "simple",
         "concise"
       ],
+      "topics": [
+        "communication"
+      ],
+      "aliases": [
+        "concise",
+        "plain language",
+        "short answers"
+      ],
+      "keywords": [
+        "brief",
+        "simple",
+        "direct",
+        "tone"
+      ],
+      "status": "stable",
       "path": "modes/grug-brained",
       "files": [
         "mode.yaml"
@@ -31,6 +46,22 @@
         "secrets",
         "git"
       ],
+      "topics": [
+        "security"
+      ],
+      "aliases": [
+        "appsec",
+        "secure coding",
+        "credential hygiene"
+      ],
+      "keywords": [
+        "credentials",
+        "tokens",
+        "private keys",
+        "secret scanning",
+        "leaks"
+      ],
+      "status": "stable",
       "path": "rules/no-secrets",
       "files": [
         "RULE.md"
@@ -48,6 +79,24 @@
         "security",
         "devops"
       ],
+      "topics": [
+        "openshift",
+        "security",
+        "devops"
+      ],
+      "aliases": [
+        "kubernetes safety",
+        "oc safety",
+        "cluster guardrails"
+      ],
+      "keywords": [
+        "kubernetes",
+        "cluster",
+        "manifests",
+        "troubleshooting",
+        "change execution"
+      ],
+      "status": "stable",
       "path": "rules/openshift-with-bob",
       "files": [
         "RULE.md"
@@ -65,6 +114,23 @@
         "quality",
         "testing"
       ],
+      "topics": [
+        "typescript",
+        "quality",
+        "testing"
+      ],
+      "aliases": [
+        "ts quality",
+        "type safety"
+      ],
+      "keywords": [
+        "types",
+        "typecheck",
+        "tests",
+        "maintainability",
+        "verification"
+      ],
+      "status": "stable",
       "path": "rules/typescript-quality",
       "files": [
         "RULE.md"
@@ -82,6 +148,24 @@
         "quality",
         "testing"
       ],
+      "topics": [
+        "code-review",
+        "quality",
+        "testing"
+      ],
+      "aliases": [
+        "pr review",
+        "pull request review",
+        "review code"
+      ],
+      "keywords": [
+        "bugs",
+        "regressions",
+        "maintainability",
+        "missing tests",
+        "diff review"
+      ],
+      "status": "stable",
       "path": "skills/code-review",
       "files": [
         "SKILL.md"
@@ -100,6 +184,23 @@
         "ui",
         "react"
       ],
+      "topics": [
+        "frontend",
+        "design"
+      ],
+      "aliases": [
+        "ui design",
+        "web design",
+        "react ui"
+      ],
+      "keywords": [
+        "interface",
+        "layout",
+        "responsive",
+        "visual design",
+        "polish"
+      ],
+      "status": "stable",
       "path": "skills/frontend-design",
       "files": [
         "SKILL.md"
@@ -120,6 +221,24 @@
         "agents",
         "tools"
       ],
+      "topics": [
+        "watsonx",
+        "agents",
+        "tools"
+      ],
+      "aliases": [
+        "wxo",
+        "watsonx orchestrate",
+        "orchestrate adk"
+      ],
+      "keywords": [
+        "agent builder",
+        "tools",
+        "adk cli",
+        "assistant",
+        "watsonx"
+      ],
+      "status": "stable",
       "path": "skills/watsonx-orchestrate",
       "files": [
         "SKILL.md"

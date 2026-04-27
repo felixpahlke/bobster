@@ -382,6 +382,22 @@ function itemSuggestions(items, options: any = {}) {
   return byCurrent(values, current);
 }
 
+function topicSuggestions(items, current) {
+  const seen = new Set();
+  const topics = [];
+  for (const item of items) {
+    const itemTopics = Array.isArray(item.topics) && item.topics.length ? item.topics : item.tags || [];
+    for (const topic of itemTopics) {
+      const value = String(topic || "").trim();
+      if (value && !seen.has(value)) {
+        seen.add(value);
+        topics.push(value);
+      }
+    }
+  }
+  return byCurrent(topics.sort((left, right) => left.localeCompare(right)), current);
+}
+
 function parsedTypePrefix(current) {
   const slash = current.indexOf("/");
   if (slash === -1) {
@@ -455,6 +471,11 @@ async function completeName(command, cwd, parsed, current) {
       type: "skill",
       unqualified: true,
     });
+  }
+
+  if (command === "list" && !parsed.flags.installed) {
+    const items = await registryItems(cwd, parsed.flags);
+    return topicSuggestions(items, current);
   }
 
   if (command === "remove" || command === "forget" || command === "update") {
