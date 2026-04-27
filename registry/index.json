@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-04-27T08:39:54.844Z",
+  "generatedAt": "2026-04-27T08:42:20.208Z",
   "baseUrl": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry",
   "items": [
     {
@@ -50,8 +50,7 @@
       ],
       "path": "rules/openshift-with-bob",
       "files": [
-        "RULE.md",
-        "application-samples/helloworld/deployment.yaml"
+        "RULE.md"
       ],
       "entry": "RULE.md"
     },
