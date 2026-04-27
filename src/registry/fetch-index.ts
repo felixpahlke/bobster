@@ -35,6 +35,10 @@ function githubBlobInfo(source) {
     return null;
   }
 
+  if (!url.hostname.includes("github")) {
+    return null;
+  }
+
   const parts = url.pathname.split("/").filter(Boolean);
   const blobIndex = parts.indexOf("blob");
   if (blobIndex !== 2 || parts.length < 5) {
@@ -45,6 +49,49 @@ function githubBlobInfo(source) {
     host: url.hostname,
     owner: parts[0],
     path: parts.slice(4).join("/"),
+    ref: parts[3],
+    repo: parts[1],
+  };
+}
+
+function githubRepoInfo(source) {
+  let url;
+  try {
+    url = new URL(source);
+  } catch {
+    return null;
+  }
+
+  if (!url.hostname.includes("github")) {
+    return null;
+  }
+
+  const parts = url.pathname.split("/").filter(Boolean);
+  if (parts.length < 2) {
+    return null;
+  }
+
+  if (parts.length === 2) {
+    return {
+      host: url.hostname,
+      owner: parts[0],
+      path: "registry/index.json",
+      ref: url.searchParams.get("ref") || "main",
+      repo: parts[1],
+    };
+  }
+
+  const treeIndex = parts.indexOf("tree");
+  if (treeIndex !== 2 || parts.length < 4) {
+    return null;
+  }
+
+  const treePath = parts.slice(4).join("/");
+  const indexPath = treePath && path.posix.extname(treePath) ? treePath : `${treePath || "registry"}/index.json`;
+  return {
+    host: url.hostname,
+    owner: parts[0],
+    path: indexPath,
     ref: parts[3],
     repo: parts[1],
   };
@@ -61,7 +108,7 @@ function githubContentsUrl(info) {
 }
 
 function normalizeHttpSource(source) {
-  const info = githubBlobInfo(source);
+  const info = githubBlobInfo(source) || githubRepoInfo(source);
   if (info) {
     return {
       headers: {

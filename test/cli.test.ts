@@ -8,6 +8,7 @@ const path = require("node:path");
 const { promisify } = require("node:util");
 const test = require("node:test");
 const { main } = require("../src/cli");
+const { fetchRegistryIndex } = require("../src/registry/fetch-index");
 const { validateManifest } = require("../src/registry/schemas");
 
 const execFileAsync = promisify(execFile);
@@ -211,6 +212,39 @@ test("registry add, list, doctor, and remove manage project registries", async (
     updated.registries.map((registry) => registry.name),
     ["public"],
   );
+});
+
+test("GitHub repository tree registry URLs resolve to raw index content", async () => {
+  const originalFetch = (global as any).fetch;
+  const seen = [];
+  (global as any).fetch = async (url, options) => {
+    seen.push({ options, url: String(url) });
+    return {
+      ok: true,
+      async text() {
+        return JSON.stringify({
+          schemaVersion: 1,
+          generatedAt: "2026-04-24T00:00:00.000Z",
+          baseUrl: "https://github.ibm.com/Felix-Pahlke/bobster-registry-internal/tree/main/registry",
+          items: [],
+        });
+      },
+    };
+  };
+
+  try {
+    const context = await fetchRegistryIndex(
+      "https://github.ibm.com/Felix-Pahlke/bobster-registry-internal/tree/main",
+    );
+    assert.equal(context.index.items.length, 0);
+    assert.equal(
+      seen[0].url,
+      "https://github.ibm.com/api/v3/repos/Felix-Pahlke/bobster-registry-internal/contents/registry/index.json?ref=main",
+    );
+    assert.equal(seen[0].options.headers.Accept, "application/vnd.github.raw");
+  } finally {
+    (global as any).fetch = originalFetch;
+  }
 });
 
 test("completion suggests registry skills and rules", async () => {

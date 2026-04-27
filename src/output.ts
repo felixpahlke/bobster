@@ -97,6 +97,54 @@ function groupItems(items) {
   }, {});
 }
 
+function outputColumns(options: any = {}) {
+  return Math.max(60, Number(options.columns || process.stdout?.columns || 100));
+}
+
+function wrapWords(text, width) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+
+  for (const word of words) {
+    if (!line) {
+      line = word;
+      continue;
+    }
+    if (line.length + 1 + word.length <= width) {
+      line += ` ${word}`;
+      continue;
+    }
+    lines.push(line);
+    line = word;
+  }
+
+  if (line) {
+    lines.push(line);
+  }
+  return lines.length ? lines : [""];
+}
+
+function formatColumns(left, right, options: any = {}) {
+  const leftWidth = options.leftWidth;
+  const theme = options.theme;
+  const columns = outputColumns(options);
+  const gap = "  ";
+  const indent = " ".repeat(options.indent || 0);
+  const leftText = String(left || "");
+  const rightWidth = Math.max(24, columns - indent.length - leftWidth - gap.length);
+  const lines = wrapWords(right, rightWidth);
+  const firstLeft = leftText.padEnd(leftWidth);
+  const continuation = " ".repeat(leftWidth);
+  const formatLeft = (value) => (theme ? theme.id(value) : value);
+
+  return lines
+    .map((line, index) =>
+      `${indent}${formatLeft(index === 0 ? firstLeft : continuation)}${gap}${line}`.trimEnd(),
+    )
+    .join("\n");
+}
+
 function formatItemRows(items: any[], options: any = {}) {
   if (!items.length) {
     return "No items found.";
@@ -106,7 +154,7 @@ function formatItemRows(items: any[], options: any = {}) {
   const width = Math.max(...items.map((item) => itemId(item).length), 10);
   return items
     .map((item) => {
-      const paddedId = itemId(item).padEnd(width);
+      const id = itemId(item);
       const details = [];
       if (options.showTopics) {
         const topics = itemTopics(item).slice(0, 3);
@@ -118,7 +166,11 @@ function formatItemRows(items: any[], options: any = {}) {
         }
       }
       const suffix = details.length ? `  [${details.join("; ")}]` : "";
-      return `${theme ? theme.id(paddedId) : paddedId}  ${item.description}${suffix}`;
+      return formatColumns(id, `${item.description}${suffix}`, {
+        columns: options.columns,
+        leftWidth: width,
+        theme,
+      });
     })
     .join("\n");
 }
@@ -145,9 +197,12 @@ function formatGroupedItems(items: any[], options: any = {}) {
     sections.push(theme ? theme.heading(TYPE_LABELS[type]) : TYPE_LABELS[type]);
     for (const item of typeItems) {
       const label = item._includeRegistry ? itemId(item, { includeRegistry: true }) : item.name;
-      const paddedName = label.padEnd(width);
-      const name = theme ? theme.id(paddedName) : paddedName;
-      sections.push(`  ${name}  ${item.description}`);
+      sections.push(formatColumns(label, item.description, {
+        columns: options.columns,
+        indent: 2,
+        leftWidth: width,
+        theme,
+      }));
     }
     sections.push("");
   }
@@ -208,14 +263,14 @@ function formatCatalog(items: any[], options: any = {}) {
     .slice(0, options.recommendedLimit || 8);
   if (recommended.length) {
     sections.push(heading("Recommended"));
-    sections.push(formatItemRows(recommended, { showTopics: true, theme }));
+    sections.push(formatItemRows(recommended, { columns: options.columns, showTopics: true, theme }));
     sections.push("");
   }
 
   const allLimit = options.allLimit || 15;
   if (items.length <= allLimit) {
     sections.push(heading("All Items"));
-    sections.push(formatGroupedItems(items, { theme }));
+    sections.push(formatGroupedItems(items, { columns: options.columns, theme }));
   } else {
     sections.push(
       `${items.length} items available. Use ${theme ? theme.id("bobster list <topic>") : "bobster list <topic>"} or ${theme ? theme.id("bobster search <query>") : "bobster search <query>"} to narrow results.`,
@@ -233,5 +288,6 @@ module.exports = {
   formatItemRows,
   itemId,
   itemTopics,
+  popularTopics,
   topicLabel,
 };

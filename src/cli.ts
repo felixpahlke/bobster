@@ -40,6 +40,7 @@ const COMMAND_HANDLERS = {
 function createDefaultIo() {
   return {
     color: Boolean(process.stdout.isTTY && !process.env.NO_COLOR),
+    columns: process.stdout.columns,
     stdin: process.stdin,
     stderr: process.stderr,
     out(message = "") {

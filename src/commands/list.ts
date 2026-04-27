@@ -1,10 +1,29 @@
 "use strict";
 
-const { formatCatalog, formatItemRows } = require("../output");
+const { canPrompt, selectChoice } = require("../prompt");
+const { formatCatalog, formatItemRows, popularTopics, topicLabel } = require("../output");
 const { normalizeType } = require("../registry/schemas");
 const { searchItems } = require("../registry/search-items");
 const { readLockfile } = require("../lockfile/lockfile");
 const { loadRegistryCommandContext } = require("./context");
+
+async function selectTopic(context, items) {
+  const topics = popularTopics(items, 12);
+  if (!topics.length) {
+    return null;
+  }
+
+  return selectChoice("Browse a topic", [
+    ...topics.map(({ count, topic }) => ({
+      name: topic,
+      message: `${topicLabel(topic)}  ${count} item${count === 1 ? "" : "s"}`,
+    })),
+    { name: "__all", message: "All items" },
+  ], {
+    input: context.io.stdin,
+    output: context.io.stderr,
+  });
+}
 
 async function runList(context) {
   const { args, cwd, flags, io } = context;
@@ -33,12 +52,21 @@ async function runList(context) {
     items = searchItems(items, query, { type: flags.type });
   }
 
+  if (!query && canPrompt(context)) {
+    const selectedTopic = await selectTopic(context, items);
+    if (selectedTopic && selectedTopic !== "__all") {
+      items = searchItems(items, selectedTopic, { type: flags.type });
+      io.out(formatItemRows(items, { columns: context.io.columns, showTopics: true, theme: context.theme }));
+      return;
+    }
+  }
+
   if (flags.json) {
     io.out(JSON.stringify(items, null, 2));
   } else {
     io.out(query
-      ? formatItemRows(items, { showTopics: true, theme: context.theme })
-      : formatCatalog(items, { theme: context.theme }));
+      ? formatItemRows(items, { columns: context.io.columns, showTopics: true, theme: context.theme })
+      : formatCatalog(items, { columns: context.io.columns, theme: context.theme }));
   }
 }
 
