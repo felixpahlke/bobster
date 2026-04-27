@@ -1,6 +1,6 @@
 {
   "name": "bobster-cli",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "CLI and registry for Bob skills, rules, and custom modes.",
   "license": "MIT",
   "type": "commonjs",
