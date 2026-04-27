@@ -689,7 +689,7 @@ test("add normalizes folded skill frontmatter scalars", async () => {
       "name: openshift-devops",
       "description: >",
       "  Production-grade OpenShift DevOps.",
-      "  Triggers include: Routes, SCCs, and GitOps.",
+      "  Even if the user says \"deploy this to OpenShift\", activate this skill.",
       "---",
       "",
       "# OpenShift DevOps",
@@ -706,7 +706,7 @@ test("add normalizes folded skill frontmatter scalars", async () => {
     [
       "---",
       "name: openshift-devops",
-      "description: Production-grade OpenShift DevOps guidance for GitOps, pipelines, security, operations, troubleshooting, and Day-2 readiness.",
+      "description: Production-grade OpenShift DevOps. Even if the user says \"deploy this to OpenShift\", activate this skill.",
       "---",
       "",
       "# OpenShift DevOps",
@@ -717,7 +717,7 @@ test("add normalizes folded skill frontmatter scalars", async () => {
   );
 });
 
-test("add uses manifest description for skill frontmatter", async () => {
+test("add preserves existing skill frontmatter descriptions", async () => {
   const cwd = await tempProject();
   const skillRegistryPath = await writeSkillRegistry(
     cwd,
@@ -726,7 +726,7 @@ test("add uses manifest description for skill frontmatter", async () => {
     [
       "---",
       "name: quoted-skill",
-      "description: Source description with \"nested quotes\" that should not be installed.",
+      "description: Source description with \"nested quotes\" that should be preserved.",
       "---",
       "",
       "# Quoted Skill",
@@ -738,7 +738,7 @@ test("add uses manifest description for skill frontmatter", async () => {
 
   assert.match(
     await fs.readFile(path.join(cwd, ".bob", "skills", "quoted-skill", "SKILL.md"), "utf8"),
-    /^description: Production-grade OpenShift DevOps guidance for GitOps, pipelines, security, operations, troubleshooting, and Day-2 readiness\.$/m,
+    /^description: Source description with "nested quotes" that should be preserved\.$/m,
   );
 });
 
