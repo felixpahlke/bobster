@@ -187,6 +187,22 @@ For package changes, also run:
 npm run pub:check
 ```
 
+## Release Package
+
+Maintainers should publish through the guarded release script:
+
+```sh
+npm run pub:release
+```
+
+The release script publishes the package under a staging dist-tag first, waits until npm can resolve the exact package version using a fresh cache, then promotes that version to `latest` and verifies a fresh `bobster --version` install through `npm exec`. This avoids briefly pointing `latest` at a version that npm metadata mirrors or local caches cannot install yet.
+
+If npm 2FA requires an OTP, pass it through:
+
+```sh
+npm run pub:release -- --otp 123456
+```
+
 ## Try a Registry Item Locally
 
 Use a scratch project so you do not accidentally write test assets into the Bobster repo:

@@ -7,6 +7,7 @@ const { BobsterError } = require("./error");
 const { itemId } = require("./output");
 
 const SUGGESTION_TYPE_ORDER = ["mode", "rule", "skill"];
+const PROMPT_DETAIL_SEPARATOR = "  ";
 
 function sortedSelectableChoices(prompt) {
   return prompt.selectable
@@ -152,18 +153,65 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
 function itemChoice(item) {
   const id = itemId(item);
   return {
+    description: item.description || "",
+    idLabel: id,
     itemType: item.type,
     name: id,
-    message: `${id}  ${item.description || ""}`.trimEnd(),
+    searchText: [
+      id,
+      item.version,
+      item.status,
+      item.description,
+      ...(Array.isArray(item.topics) ? item.topics : []),
+      ...(Array.isArray(item.tags) ? item.tags : []),
+      ...(Array.isArray(item.aliases) ? item.aliases : []),
+    ].filter(Boolean).join(" "),
+    status: item.status,
   };
 }
 
-function groupChoicesByType(choices: any[]) {
+function promptColumns(choices: any[]) {
+  const itemChoices = choices.filter((choice) => choice.idLabel);
+  return {
+    idWidth: Math.max(10, ...itemChoices.map((choice) => String(choice.idLabel).length)),
+  };
+}
+
+function formatPromptChoice(choice, columns, theme) {
+  if (!choice.idLabel) {
+    return choice;
+  }
+
+  const id = String(choice.idLabel).padEnd(columns.idWidth);
+  const details = [];
+
+  if (choice.status === "deprecated") {
+    details.push(theme ? theme.danger(choice.status) : choice.status);
+  }
+  if (choice.description) {
+    details.push(theme ? theme.dim(choice.description) : choice.description);
+  }
+
+  return {
+    ...choice,
+    message: [theme ? theme.id(id) : id, ...details].join(PROMPT_DETAIL_SEPARATOR).trimEnd(),
+  };
+}
+
+function formatPromptChoices(choices: any[], options: any = {}) {
+  const columns = promptColumns(choices);
+  return choices.map((choice) => formatPromptChoice(choice, columns, options.theme));
+}
+
+function groupChoicesByType(choices: any[], options: any = {}) {
   const grouped = [];
   const seen = new Set();
 
   for (const type of SUGGESTION_TYPE_ORDER) {
-    const typeChoices = choices.filter((choice) => choice.itemType === type);
+    const typeChoices = formatPromptChoices(
+      choices.filter((choice) => choice.itemType === type),
+      options,
+    );
     if (!typeChoices.length) {
       continue;
     }
@@ -171,35 +219,40 @@ function groupChoicesByType(choices: any[]) {
     seen.add(type);
     grouped.push({
       name: `__${type}_heading`,
-      message: TYPE_LABELS[type],
+      message: options.theme ? options.theme.heading(TYPE_LABELS[type]) : TYPE_LABELS[type],
       role: "heading",
     });
     grouped.push(...typeChoices);
   }
 
-  grouped.push(...choices.filter((choice) => !seen.has(choice.itemType)));
+  grouped.push(...formatPromptChoices(choices.filter((choice) => !seen.has(choice.itemType)), options));
   return grouped;
 }
 
 function matchChoice(choice, input) {
   const query = String(input || "").trim().toLowerCase();
-  return !query || String(choice.message || "").toLowerCase().includes(query);
+  return !query || String(choice.searchText || choice.message || "").toLowerCase().includes(query);
 }
 
-function suggestGroupedChoices(input, choices: any[]) {
+function suggestGroupedChoices(input, choices: any[], options: any = {}) {
   return groupChoicesByType(
     choices
       .filter((choice) => choice.role !== "heading")
       .filter((choice) => matchChoice(choice, input)),
+    options,
   );
 }
 
 async function selectItem(message: string, items: any[], options: any = {}) {
   const itemChoices = items.map(itemChoice);
-  const choices = options.groupByType ? groupChoicesByType(itemChoices) : itemChoices;
+  const choices = options.groupByType
+    ? groupChoicesByType(itemChoices, { theme: options.theme })
+    : formatPromptChoices(itemChoices, { theme: options.theme });
   const selectedId = await selectChoice(message, choices, {
     ...options,
-    suggest: options.groupByType ? suggestGroupedChoices : options.suggest,
+    suggest: options.groupByType
+      ? (input, choices) => suggestGroupedChoices(input, choices, { theme: options.theme })
+      : options.suggest,
   });
   if (!selectedId) {
     return null;

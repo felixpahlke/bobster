@@ -67,6 +67,7 @@ async function resolveRegistryItemForCommand(context, registryContext, name, opt
       groupByType: true,
       input: context.io.stdin,
       output: context.io.stderr,
+      theme: context.theme,
     });
     if (!selected) {
       throw error;
@@ -89,6 +90,7 @@ async function resolveRegistryItemForCommand(context, registryContext, name, opt
         input: context.io.stdin,
         output: context.io.stderr,
         searchable: options.searchable,
+        theme: context.theme,
       });
       if (selected) {
         return selected;
@@ -115,6 +117,7 @@ async function resolveInstalledItemForCommand(context, lockfile, name, options: 
     const selected = await selectItem(options.message || "Did you mean one of these?", suggestions, {
       input: context.io.stdin,
       output: context.io.stderr,
+      theme: context.theme,
     });
     if (!selected) {
       throw error;
@@ -133,6 +136,7 @@ async function selectRegistryItemForCommand(context, items, options: any = {}) {
     input: context.io.stdin,
     output: context.io.stderr,
     searchable: options.searchable,
+    theme: context.theme,
   });
 }
 

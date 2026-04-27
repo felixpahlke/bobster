@@ -1,5 +1,7 @@
 # Project State
 
+- Interactive pickers now render aligned item ids, dim descriptions, themed headings, and only surface deprecated status while keeping metadata-backed filtering.
+- npm release flow now publishes under a staging dist-tag, waits for exact version metadata, promotes to `latest`, and verifies a fresh `npm exec` install.
 - Maintainability refactor plan added at `.plans/maintainability-refactor.md`; completed slices centralize write-plan path summaries and split GitHub/HTTP registry source handling out of `fetch-index`.
 - README install and quick-start docs now make `bobster add <term>` the primary discovery/install path, with `bobster add security` as the lead example.
 - README quick start now shows the direct asset flow: `info`, `show`, `add`, then `list --installed`.

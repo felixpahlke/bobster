@@ -1039,6 +1039,32 @@ test("interactive registry suggestions group visible items by type", () => {
     "Rules",
     "rule/no-secrets  Prevent credential leaks.",
   ]);
+
+  const polished = groupChoicesByType([
+    {
+      description: "Production OpenShift guidance.",
+      idLabel: "skill/openshift-devops",
+      itemType: "skill",
+      name: "skill/openshift-devops",
+      searchText: "skill/openshift-devops gitops pipelines ocp",
+      version: "1.0.0",
+    },
+    {
+      description: "Secure cluster changes.",
+      idLabel: "rule/openshift-with-bob",
+      itemType: "rule",
+      name: "rule/openshift-with-bob",
+      searchText: "rule/openshift-with-bob guardrails cluster",
+      status: "deprecated",
+    },
+  ]);
+  assert.doesNotMatch(polished.find((choice) => choice.name === "skill/openshift-devops").message, /v1\.0\.0/);
+  assert.match(polished.find((choice) => choice.name === "skill/openshift-devops").message, /Production/);
+  assert.match(polished.find((choice) => choice.name === "rule/openshift-with-bob").message, /deprecated\s+Secure/);
+  assert.deepEqual(suggestGroupedChoices("ocp", polished).map((choice) => choice.name), [
+    "__skill_heading",
+    "skill/openshift-devops",
+  ]);
 });
 
 test("add suggests close registry names for typos", async () => {

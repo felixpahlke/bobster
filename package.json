@@ -24,7 +24,7 @@
     "registry:validate": "npm run build && node dist/src/cli.js registry validate",
     "registry:prepare": "npm run registry:build && node dist/src/cli.js registry validate",
     "pub:check": "npm run build && npm --cache .npm-cache pack --dry-run",
-    "pub:release": "npm --cache .npm-cache publish",
+    "pub:release": "node scripts/release-npm.js",
     "prepare": "npm run build",
     "prepub:release": "npm run test && npm run registry:validate && npm run pub:check"
   },
