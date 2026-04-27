@@ -5,6 +5,51 @@ const { AutoComplete, Select } = require("enquirer");
 const { BobsterError } = require("./error");
 const { itemId } = require("./output");
 
+function isReadlineClosedError(error) {
+  return error?.code === "ERR_USE_AFTER_CLOSE" && /readline/i.test(error.message || "");
+}
+
+function isPromptAbortError(error) {
+  return isReadlineClosedError(error) ||
+    error?.name === "AbortError" ||
+    error?.code === "ABORT_ERR";
+}
+
+function safeCloseReadline(rl) {
+  try {
+    rl.close();
+  } catch (error) {
+    if (!isReadlineClosedError(error)) {
+      throw error;
+    }
+  }
+}
+
+function makePromptCleanupSafe(prompt) {
+  const start = prompt.start.bind(prompt);
+  prompt.start = function startWithSafeCleanup(...args) {
+    const result = start(...args);
+    const stop = this.stop;
+
+    if (typeof stop === "function") {
+      const safeStop = () => {
+        try {
+          stop();
+        } catch (error) {
+          if (!isReadlineClosedError(error)) {
+            throw error;
+          }
+        }
+      };
+      this.removeListener("close", stop);
+      this.stop = safeStop;
+      this.once("close", safeStop);
+    }
+
+    return result;
+  };
+}
+
 function canPrompt(context) {
   return Boolean(
     !context.flags?.json &&
@@ -32,8 +77,13 @@ async function confirm(message: string, options: any = {}) {
       return Boolean(options.defaultValue);
     }
     return normalized === "y" || normalized === "yes";
+  } catch (error) {
+    if (isPromptAbortError(error)) {
+      return false;
+    }
+    throw error;
   } finally {
-    rl.close();
+    safeCloseReadline(rl);
   }
 }
 
@@ -51,6 +101,7 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
     stdin: options.input || process.stdin,
     stdout: options.output || process.stderr,
   });
+  makePromptCleanupSafe(prompt);
 
   try {
     return await prompt.run();

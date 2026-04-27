@@ -163,11 +163,14 @@ Add private or team registries with:
 
 ```sh
 bobster registry add internal https://github.example.com/team/bobster-registry/blob/main/registry/index.json
+bobster registry add ssh/git@github.ibm.com:team/bobster-registry-internal.git
 bobster registry doctor internal
 bobster add internal/rule/example-rule
 ```
 
 For private GitHub or GitHub Enterprise registries, Bobster derives the host from the URL and uses the local GitHub CLI login when authentication is needed. Run `gh auth login -h <host>` if `registry doctor` reports an authentication error.
+
+SSH Git registry sources are cloned into `.private-registries/` and configured from the checked-out `registry/index.json`. For repositories named `bobster-registry-<name>`, Bobster infers `<name>` as the registry name.
 
 ## Private Registries
 

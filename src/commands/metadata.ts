@@ -123,6 +123,7 @@ const COMMAND_HELP = {
     description: "Manage configured registries or build the committed registry/index.json file.",
     options: [
       "add <name> <url>    Add a registry index URL or local index path.",
+      "add ssh/git@...     Clone an SSH Git registry into .private-registries/.",
       "list                List configured registries.",
       "remove <name>       Remove a configured registry.",
       "doctor [name]       Validate configured registry access and schema.",

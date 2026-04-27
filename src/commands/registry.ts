@@ -1,16 +1,110 @@
 "use strict";
 
 const fs = require("node:fs/promises");
+const path = require("node:path");
+const { execFile } = require("node:child_process");
+const { promisify } = require("node:util");
 const { BobsterError } = require("../error");
 const { defaultConfig, defaultRegistries, resolveConfigPath } = require("../config/defaults");
 const { configuredRegistries, readJsonIfExists } = require("../config/load-config");
 const { fetchRegistryIndex } = require("../registry/fetch-index");
 const { writeRegistryIndex } = require("../registry/build-index");
 
+const execFileAsync = promisify(execFile);
+const PRIVATE_REGISTRIES_DIR = ".private-registries";
+
 function assertRegistryName(name) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(name || ""))) {
     throw new BobsterError("Registry name must be lowercase kebab-case.");
   }
+}
+
+function stripSshRegistryPrefix(source) {
+  return String(source || "").trim().replace(/^ssh\//, "");
+}
+
+function registryNameFromRepo(repoName) {
+  const baseName = repoName.replace(/\.git$/i, "").replace(/^bobster-registry-/i, "");
+  const name = baseName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return name || "registry";
+}
+
+function parseSshGitRegistrySource(source) {
+  const normalized = stripSshRegistryPrefix(source);
+  const shorthand = normalized.match(/^[^@/\s]+@([^:\s]+):(.+)$/);
+
+  if (shorthand) {
+    const repoName = path.posix.basename(shorthand[2]).replace(/\.git$/i, "");
+    return {
+      cloneUrl: normalized,
+      name: registryNameFromRepo(repoName),
+      repoName,
+    };
+  }
+
+  let url;
+  try {
+    url = new URL(normalized);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== "ssh:") {
+    return null;
+  }
+
+  const repoName = path.posix.basename(url.pathname).replace(/\.git$/i, "");
+  if (!repoName) {
+    return null;
+  }
+
+  return {
+    cloneUrl: normalized,
+    name: registryNameFromRepo(repoName),
+    repoName,
+  };
+}
+
+async function pathExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureSshGitRegistryCheckout(cwd, sourceInfo) {
+  const relativeCheckoutPath = path.join(PRIVATE_REGISTRIES_DIR, sourceInfo.repoName);
+  const checkoutPath = path.join(cwd, relativeCheckoutPath);
+  const indexPath = path.join(relativeCheckoutPath, "registry", "index.json");
+  const absoluteIndexPath = path.join(cwd, indexPath);
+
+  if (await pathExists(checkoutPath)) {
+    if (!(await pathExists(absoluteIndexPath))) {
+      throw new BobsterError(`Existing checkout is missing ${indexPath}.`);
+    }
+    return indexPath;
+  }
+
+  await fs.mkdir(path.dirname(checkoutPath), { recursive: true });
+  try {
+    await execFileAsync("git", ["clone", sourceInfo.cloneUrl, checkoutPath], {
+      timeout: 120000,
+    });
+  } catch (error) {
+    const details = String(error.stderr || error.message || "").trim();
+    throw new BobsterError(`Could not clone SSH registry ${sourceInfo.cloneUrl}.${details ? `\n${details}` : ""}`);
+  }
+
+  if (!(await pathExists(absoluteIndexPath))) {
+    throw new BobsterError(`Cloned registry is missing ${indexPath}.`);
+  }
+
+  return indexPath;
 }
 
 async function readProjectConfig(cwd) {
@@ -41,10 +135,26 @@ function ensureRegistries(config) {
 
 async function addRegistry(context) {
   const { args, cwd, flags, io } = context;
-  const name = args[1];
-  const url = args[2];
-  if (!name || !url) {
-    throw new BobsterError("Usage: bobster registry add <name> <url>");
+  const nameOrSource = args[1];
+  const explicitUrl = args[2];
+  if (!nameOrSource) {
+    throw new BobsterError("Usage: bobster registry add <name> <url>\n       bobster registry add ssh/git@host:owner/repo.git");
+  }
+
+  let name = nameOrSource;
+  let url = explicitUrl;
+  const sshSource = explicitUrl
+    ? parseSshGitRegistrySource(explicitUrl)
+    : parseSshGitRegistrySource(nameOrSource);
+
+  if (sshSource) {
+    name = explicitUrl ? nameOrSource : sshSource.name;
+    assertRegistryName(name);
+    url = await ensureSshGitRegistryCheckout(cwd, sshSource);
+  }
+
+  if (!url) {
+    throw new BobsterError("Usage: bobster registry add <name> <url>\n       bobster registry add ssh/git@host:owner/repo.git");
   }
   assertRegistryName(name);
 
@@ -196,5 +306,6 @@ async function runRegistry(context) {
 }
 
 module.exports = {
+  parseSshGitRegistrySource,
   runRegistry,
 };

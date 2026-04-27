@@ -5,6 +5,7 @@ const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
+const { PassThrough } = require("node:stream");
 const { promisify } = require("node:util");
 const test = require("node:test");
 const { main } = require("../src/cli");
@@ -48,6 +49,17 @@ async function cli(cwd: string, args: string[], options: any = {}) {
 
 async function readJson(filePath) {
   return JSON.parse(await fs.readFile(filePath, "utf8"));
+}
+
+function ttyStream() {
+  const stream = new PassThrough();
+  stream.isTTY = true;
+  stream.isRaw = false;
+  stream.columns = 80;
+  stream.setRawMode = (value) => {
+    stream.isRaw = value;
+  };
+  return stream;
 }
 
 async function writeBundledRuleRegistry(cwd: string) {
@@ -211,6 +223,61 @@ test("registry add, list, doctor, and remove manage project registries", async (
   assert.deepEqual(
     updated.registries.map((registry) => registry.name),
     ["public"],
+  );
+});
+
+test("registry add accepts SSH Git registry shorthand and infers a local checkout", async () => {
+  const cwd = await tempProject();
+  const checkoutRegistry = path.join(cwd, ".private-registries", "bobster-registry-internal", "registry");
+  await fs.mkdir(checkoutRegistry, { recursive: true });
+  await fs.writeFile(
+    path.join(checkoutRegistry, "index.json"),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: "2026-04-24T00:00:00.000Z",
+        items: [],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+
+  await cli(cwd, ["registry", "add", "ssh/git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git"]);
+
+  const config = await readJson(path.join(cwd, "bobster.json"));
+  assert.deepEqual(
+    config.registries.map((registry) => registry.name),
+    ["public", "internal"],
+  );
+  assert.equal(
+    config.registries[1].url,
+    path.join(".private-registries", "bobster-registry-internal", "registry", "index.json"),
+  );
+
+  const doctor = await cli(cwd, ["registry", "doctor", "internal"]);
+  assert.match(doctor.stdout, /internal: ok \(0 items\)/);
+});
+
+test("SSH Git registry sources parse optional prefixes", () => {
+  const { parseSshGitRegistrySource } = require("../src/commands/registry");
+
+  assert.deepEqual(
+    parseSshGitRegistrySource("ssh/git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git"),
+    {
+      cloneUrl: "git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git",
+      name: "internal",
+      repoName: "bobster-registry-internal",
+    },
+  );
+  assert.deepEqual(
+    parseSshGitRegistrySource("ssh://git@github.ibm.com/Felix-Pahlke/bobster-registry-internal.git"),
+    {
+      cloneUrl: "ssh://git@github.ibm.com/Felix-Pahlke/bobster-registry-internal.git",
+      name: "internal",
+      repoName: "bobster-registry-internal",
+    },
   );
 });
 
@@ -598,6 +665,73 @@ test("catalog and search use discovery metadata", async () => {
   assert.match(info.stdout, /Topics:/);
   assert.match(info.stdout, /Aliases:/);
   assert.match(info.stdout, /Status:/);
+});
+
+test("bare add queries offer discovery matches before installing exact names", async () => {
+  const { resolveRegistryItemForCommand, searchMatchesForBareRegistryQuery } = require("../src/commands/resolve");
+  const index = {
+    items: [
+      {
+        name: "security",
+        type: "mode",
+        version: "0.1.0",
+        description: "Security review mode.",
+        tags: ["mode"],
+      },
+      {
+        name: "no-secrets",
+        type: "rule",
+        version: "0.1.0",
+        description: "Prevent credential leaks.",
+        tags: ["security", "secrets"],
+        topics: ["security"],
+        aliases: ["secure coding"],
+      },
+    ],
+  };
+  const context = {
+    flags: {},
+    io: {
+      stdin: { isTTY: true },
+      stderr: { isTTY: true },
+    },
+  };
+
+  const matches = searchMatchesForBareRegistryQuery(index, "security");
+  assert.deepEqual(matches.map((item) => `${item.type}/${item.name}`), ["mode/security", "rule/no-secrets"]);
+
+  const selected = await resolveRegistryItemForCommand(context, { index }, "security", {
+    canPrompt: () => true,
+    message: "Select an item to add",
+    searchBareName: true,
+    selectItem: async (message, items) => {
+      assert.equal(message, "Select an item to add");
+      assert.deepEqual(items.map((item) => `${item.type}/${item.name}`), ["mode/security", "rule/no-secrets"]);
+      return items.find((item) => item.type === "rule");
+    },
+  });
+  assert.equal(selected.name, "no-secrets");
+
+  const nonInteractive = await resolveRegistryItemForCommand(context, { index }, "security", {
+    canPrompt: () => false,
+    searchBareName: true,
+    selectItem: async () => {
+      throw new Error("unexpected prompt");
+    },
+  });
+  assert.equal(`${nonInteractive.type}/${nonInteractive.name}`, "mode/security");
+});
+
+test("interactive select handles ctrl-c as cancellation", async () => {
+  const { selectChoice } = require("../src/prompt");
+  const input = ttyStream();
+  const output = ttyStream();
+  const promise = selectChoice("Select an item", [{ name: "one", message: "one" }], { input, output });
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  input.write("\x03");
+
+  await assert.rejects(promise, /Selection cancelled/);
 });
 
 test("add suggests close registry names for typos", async () => {

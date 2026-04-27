@@ -85,7 +85,9 @@ async function runAdd(context: any, options: any = {}) {
 
   const name = options.forceType && !rawName.includes("/") ? `${options.forceType}/${rawName}` : rawName;
   const item = await resolveRegistryItemForCommand(context, registryContext, name, {
-    message: "Did you mean one of these? Select an item to add",
+    message: "Select an item to add",
+    searchable: true,
+    searchBareName: !options.forceType && !rawName.includes("/"),
   });
   await installRegistryItem(context, config, registryContext, item);
 }
