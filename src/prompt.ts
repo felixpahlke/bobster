@@ -8,6 +8,40 @@ const { itemId } = require("./output");
 
 const SUGGESTION_TYPE_ORDER = ["mode", "rule", "skill"];
 
+function sortedSelectableChoices(prompt) {
+  return prompt.selectable
+    .filter((choice) => typeof choice.index === "number")
+    .sort((left, right) => left.index - right.index);
+}
+
+function isFirstSelectableChoice(prompt) {
+  const selectable = sortedSelectableChoices(prompt);
+  return selectable.length > 0 && prompt.focused?.index === selectable[0].index;
+}
+
+function isLastSelectableChoice(prompt) {
+  const selectable = sortedSelectableChoices(prompt);
+  return selectable.length > 0 && prompt.focused?.index === selectable[selectable.length - 1].index;
+}
+
+function clampPromptNavigation(Prompt) {
+  return class NonWrappingPrompt extends Prompt {
+    up() {
+      if (isFirstSelectableChoice(this)) {
+        return this.alert();
+      }
+      return super.up();
+    }
+
+    down() {
+      if (isLastSelectableChoice(this)) {
+        return this.alert();
+      }
+      return super.down();
+    }
+  };
+}
+
 function isReadlineClosedError(error) {
   return error?.code === "ERR_USE_AFTER_CLOSE" && /readline/i.test(error.message || "");
 }
@@ -95,7 +129,7 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
     return null;
   }
 
-  const Prompt = options.searchable ? AutoComplete : Select;
+  const Prompt: any = clampPromptNavigation(options.searchable ? AutoComplete : Select);
   const suggest = options.suggest ? { suggest: options.suggest } : {};
   const prompt = new Prompt({
     choices,

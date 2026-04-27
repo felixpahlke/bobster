@@ -9,6 +9,7 @@ const {
   addPlannedWrite,
   createWritePlan,
   formatPlan,
+  planPaths,
   readFileIfExists,
 } = require("../fs/write-plan");
 const { runPlannedOperation } = require("./planned-operation");
@@ -87,9 +88,7 @@ async function runInit(context) {
     plan,
     json: {
       target,
-      creates: plan.creates.map((item) => item.displayPath),
-      updates: plan.updates.map((item) => item.displayPath),
-      conflicts: plan.conflicts.map((item) => item.displayPath),
+      ...planPaths(plan, ["creates", "updates", "conflicts"]),
       directories: dirs.map((dir) => path.relative(cwd, dir)),
       preserved,
     },

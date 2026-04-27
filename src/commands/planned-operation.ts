@@ -1,17 +1,11 @@
 "use strict";
 
 const { BobsterError } = require("../error");
-const { applyWritePlan } = require("../fs/write-plan");
+const { applyWritePlan, planPaths } = require("../fs/write-plan");
 const { confirm } = require("../prompt");
 
 function planJson(plan) {
-  return {
-    creates: plan.creates.map((entry) => entry.displayPath),
-    updates: plan.updates.map((entry) => entry.displayPath),
-    deletes: plan.deletes.map((entry) => entry.displayPath),
-    unchanged: plan.unchanged.map((entry) => entry.displayPath),
-    conflicts: plan.conflicts.map((entry) => entry.displayPath),
-  };
+  return planPaths(plan);
 }
 
 function valueOf(value, context) {

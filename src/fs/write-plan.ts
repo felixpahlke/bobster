@@ -4,6 +4,8 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { toDisplayPath } = require("./safe-path");
 
+const PLAN_SECTIONS = ["creates", "updates", "deletes", "unchanged", "conflicts"];
+
 function createWritePlan() {
   return {
     creates: [],
@@ -100,6 +102,15 @@ function hasWrites(plan) {
   );
 }
 
+function planPaths(plan, sections = PLAN_SECTIONS) {
+  return Object.fromEntries(
+    sections.map((section) => [
+      section,
+      (plan[section] || []).map((entry) => entry.displayPath),
+    ]),
+  );
+}
+
 async function applyWritePlan(plan: any, options: any = {}) {
   const writes = [...plan.creates, ...plan.updates];
   if (options.forceConflicts) {
@@ -171,5 +182,6 @@ module.exports = {
   formatPlan,
   hasChanges,
   hasWrites,
+  planPaths,
   readFileIfExists,
 };

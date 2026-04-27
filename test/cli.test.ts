@@ -953,6 +953,39 @@ test("interactive select handles ctrl-c as cancellation", async () => {
   await assert.rejects(promise, /Selection cancelled/);
 });
 
+test("interactive select clamps arrow navigation at list ends", async () => {
+  const { selectChoice } = require("../src/prompt");
+  const input = ttyStream();
+  const output = ttyStream();
+  const choices = [
+    { name: "one", message: "one" },
+    { name: "two", message: "two" },
+    { name: "three", message: "three" },
+  ];
+  const promise = selectChoice("Select an item", choices, { input, output });
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  input.write(`${"\x1B[B".repeat(10)}\r`);
+
+  assert.equal(await promise, "three");
+});
+
+test("interactive select still scrolls long lists before clamping", async () => {
+  const { selectChoice } = require("../src/prompt");
+  const input = ttyStream();
+  const output = ttyStream();
+  const choices = Array.from({ length: 12 }, (_, index) => ({
+    name: `item-${index + 1}`,
+    message: `item-${index + 1}`,
+  }));
+  const promise = selectChoice("Select an item", choices, { input, output, limit: 3 });
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  input.write(`${"\x1B[B".repeat(20)}\r`);
+
+  assert.equal(await promise, "item-12");
+});
+
 test("interactive registry suggestions group visible items by type", () => {
   const { groupChoicesByType, suggestGroupedChoices } = require("../src/prompt");
   const choices = [

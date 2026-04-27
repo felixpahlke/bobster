@@ -1,7 +1,7 @@
 "use strict";
 
 const { BobsterError } = require("../error");
-const { appendPlan, createWritePlan, formatPlan, hasChanges } = require("../fs/write-plan");
+const { appendPlan, createWritePlan, formatPlan, hasChanges, planPaths } = require("../fs/write-plan");
 const { readLockfile, upsertLockItem, writeLockfile } = require("../lockfile/lockfile");
 const { formatItemId } = require("../output");
 const { resolveRegistryItem } = require("../registry/resolve-item");
@@ -48,12 +48,7 @@ async function runUpdate(context) {
     plan: aggregatePlan,
     json: {
       items: installedItems,
-      plan: {
-        creates: aggregatePlan.creates.map((entry) => entry.displayPath),
-        updates: aggregatePlan.updates.map((entry) => entry.displayPath),
-        unchanged: aggregatePlan.unchanged.map((entry) => entry.displayPath),
-        conflicts: aggregatePlan.conflicts.map((entry) => entry.displayPath),
-      },
+      plan: planPaths(aggregatePlan, ["creates", "updates", "unchanged", "conflicts"]),
     },
     print() {
       io.out(

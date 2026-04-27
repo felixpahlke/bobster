@@ -1,7 +1,7 @@
 "use strict";
 
 const { BobsterError } = require("../error");
-const { formatPlan, hasChanges } = require("../fs/write-plan");
+const { formatPlan, hasChanges, planPaths } = require("../fs/write-plan");
 const { readLockfile, upsertLockItem, writeLockfile } = require("../lockfile/lockfile");
 const { compareDiscoveryItems, formatItemId } = require("../output");
 const { planInstall } = require("../installers/planner");
@@ -24,12 +24,7 @@ async function installRegistryItem(context: any, config: any, registryContext: a
     plan: install.plan,
     json: {
       item,
-      plan: {
-        creates: install.plan.creates.map((entry) => entry.displayPath),
-        updates: install.plan.updates.map((entry) => entry.displayPath),
-        unchanged: install.plan.unchanged.map((entry) => entry.displayPath),
-        conflicts: install.plan.conflicts.map((entry) => entry.displayPath),
-      },
+      plan: planPaths(install.plan, ["creates", "updates", "unchanged", "conflicts"]),
     },
     print() {
       io.out(`Install ${formatItemId(item, context.theme)}?`);

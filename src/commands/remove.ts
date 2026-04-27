@@ -8,6 +8,7 @@ const {
   addPlannedWrite,
   createWritePlan,
   formatPlan,
+  planPaths,
   readFileIfExists,
 } = require("../fs/write-plan");
 const { resolveProjectPath } = require("../fs/safe-path");
@@ -48,10 +49,7 @@ async function runRemove(context) {
     plan,
     json: {
       item,
-      plan: {
-        deletes: plan.deletes.map((entry) => entry.displayPath),
-        updates: plan.updates.map((entry) => entry.displayPath),
-      },
+      plan: planPaths(plan, ["deletes", "updates"]),
     },
     print() {
       io.out(`Remove ${formatItemId(item, context.theme)}?`);
