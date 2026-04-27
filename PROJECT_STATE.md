@@ -1,5 +1,6 @@
 # Project State
 
+- README install and quick-start docs now make `bobster add <term>` the primary discovery/install path, with `bobster add security` as the lead example.
 - Private registries may live under `.private-registries/`; this path is ignored and can contain private clones for local agent maintenance.
 - Imported Bob `Modes/` into `.private-registries/bobster-registry-internal` as private mode registry items with `origin` metadata.
 - Promotion path: review private imported content item by item before copying to public `registry/`; strip or replace private `origin` metadata before public release.
@@ -12,3 +13,6 @@
 - `bobster registry add` now manages global registry config; SSH Git shorthands use a global partial Git cache and do not create project checkouts.
 - Interactive prompt Ctrl+C cancellation is normalized to Bobster cancellation errors instead of leaking readline stack traces.
 - Mode installs now normalize unindented top-level mode field content before merging into `custom_modes.yaml`, fixing malformed imported scalars and lists.
+- CLI loading spinners now appear on interactive stderr while registries or remote asset files are being loaded; `--json`, CI, and non-TTY output stay quiet.
+- Skill installs now flatten folded frontmatter scalars such as `description: >` so Bob's skill validator does not treat continuation lines as unsupported attributes.
+- Interactive `bobster add` and `bobster search` item pickers group visible suggestions under mode/rule/skill headings while keeping only real items selectable.

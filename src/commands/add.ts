@@ -10,12 +10,15 @@ const { runPlannedOperation } = require("./planned-operation");
 const { canPrompt } = require("../prompt");
 const { normalizeType } = require("../registry/schemas");
 const { resolveRegistryItemForCommand, selectRegistryItemForCommand } = require("./resolve");
+const { withSpinner } = require("../spinner");
 
 async function installRegistryItem(context: any, config: any, registryContext: any, item: any) {
   const { flags, io } = context;
-  const install = await planInstall(config, registryContext, item, {
-    allowOverwrite: flags.force,
-  });
+  const install = await withSpinner(context, "Preparing install plan...", () =>
+    planInstall(config, registryContext, item, {
+      allowOverwrite: flags.force,
+    }),
+  );
 
   await runPlannedOperation(context, {
     plan: install.plan,

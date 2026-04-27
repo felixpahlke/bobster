@@ -11,6 +11,7 @@ const test = require("node:test");
 const { main } = require("../src/cli");
 const { fetchRegistryIndex } = require("../src/registry/fetch-index");
 const { validateManifest } = require("../src/registry/schemas");
+const { withSpinner } = require("../src/spinner");
 
 const execFileAsync = promisify(execFile);
 const repoRoot = path.resolve(__dirname, "..", "..");
@@ -89,6 +90,33 @@ function ttyStream() {
   };
   return stream;
 }
+
+test("spinner writes only to interactive stderr and skips json output", async () => {
+  const writes = [];
+  const stderr = {
+    isTTY: true,
+    write(value) {
+      writes.push(value);
+      return true;
+    },
+  };
+
+  const result = await withSpinner(
+    { env: {}, flags: {}, io: { stderr } },
+    "Loading registries...",
+    async () => "done",
+  );
+  assert.equal(result, "done");
+  assert.match(writes.join(""), /Loading registries\.\.\./);
+
+  writes.length = 0;
+  await withSpinner(
+    { env: {}, flags: { json: true }, io: { stderr } },
+    "Loading registries...",
+    async () => "json",
+  );
+  assert.equal(writes.length, 0);
+});
 
 async function writeBundledRuleRegistry(cwd: string) {
   const registryRoot = path.join(cwd, "registry-fixture");
@@ -183,6 +211,39 @@ async function writeModeRegistry(cwd: string, folder: string, itemName: string, 
             path: `modes/${itemName}`,
             files: ["mode.yaml"],
             entry: "mode.yaml",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  return path.join(registryRoot, "index.json");
+}
+
+async function writeSkillRegistry(cwd: string, folder: string, itemName: string, skillMarkdown: string) {
+  const registryRoot = path.join(cwd, folder);
+  const skillRoot = path.join(registryRoot, "skills", itemName);
+  await fs.mkdir(skillRoot, { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), skillMarkdown, "utf8");
+  await fs.writeFile(
+    path.join(registryRoot, "index.json"),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: "2026-04-24T00:00:00.000Z",
+        baseUrl: "https://example.com/registry",
+        items: [
+          {
+            name: itemName,
+            type: "skill",
+            version: "0.1.0",
+            description: `Skill from ${folder}.`,
+            tags: ["skill"],
+            path: `skills/${itemName}`,
+            files: ["SKILL.md"],
+            entry: "SKILL.md",
           },
         ],
       },
@@ -617,6 +678,45 @@ test("add installs skill, rule, and mode and writes a lockfile", async () => {
   );
 });
 
+test("add normalizes folded skill frontmatter scalars", async () => {
+  const cwd = await tempProject();
+  const skillRegistryPath = await writeSkillRegistry(
+    cwd,
+    "skill-registry",
+    "openshift-devops",
+    [
+      "---",
+      "name: openshift-devops",
+      "description: >",
+      "  Production-grade OpenShift DevOps.",
+      "  Triggers include: Routes, SCCs, and GitOps.",
+      "---",
+      "",
+      "# OpenShift DevOps",
+      "",
+      "Build production-ready OpenShift assets.",
+      "",
+    ].join("\n"),
+  );
+
+  await cli(cwd, ["add", "skill/openshift-devops", "--registry", skillRegistryPath, "--yes"]);
+
+  assert.equal(
+    await fs.readFile(path.join(cwd, ".bob", "skills", "openshift-devops", "SKILL.md"), "utf8"),
+    [
+      "---",
+      "name: openshift-devops",
+      "description: \"Production-grade OpenShift DevOps. Triggers include: Routes, SCCs, and GitOps.\"",
+      "---",
+      "",
+      "# OpenShift DevOps",
+      "",
+      "Build production-ready OpenShift assets.",
+      "",
+    ].join("\n"),
+  );
+});
+
 test("add normalizes unindented mode field content", async () => {
   const cwd = await tempProject();
   const modeRegistryPath = await writeModeRegistry(
@@ -851,6 +951,36 @@ test("interactive select handles ctrl-c as cancellation", async () => {
   input.write("\x03");
 
   await assert.rejects(promise, /Selection cancelled/);
+});
+
+test("interactive registry suggestions group visible items by type", () => {
+  const { groupChoicesByType, suggestGroupedChoices } = require("../src/prompt");
+  const choices = [
+    { itemType: "skill", name: "skill/frontend-design", message: "skill/frontend-design  Frontend guidance." },
+    { itemType: "mode", name: "mode/security", message: "mode/security  Security review mode." },
+    { itemType: "rule", name: "rule/no-secrets", message: "rule/no-secrets  Prevent credential leaks." },
+  ];
+
+  const grouped = groupChoicesByType(choices);
+  assert.deepEqual(grouped.map((choice) => choice.message), [
+    "Modes",
+    "mode/security  Security review mode.",
+    "Rules",
+    "rule/no-secrets  Prevent credential leaks.",
+    "Skills",
+    "skill/frontend-design  Frontend guidance.",
+  ]);
+  assert.deepEqual(grouped.filter((choice) => choice.role === "heading").map((choice) => choice.message), [
+    "Modes",
+    "Rules",
+    "Skills",
+  ]);
+
+  const filtered = suggestGroupedChoices("secrets", grouped);
+  assert.deepEqual(filtered.map((choice) => choice.message), [
+    "Rules",
+    "rule/no-secrets  Prevent credential leaks.",
+  ]);
 });
 
 test("add suggests close registry names for typos", async () => {

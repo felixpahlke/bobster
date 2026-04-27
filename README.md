@@ -22,9 +22,11 @@ bobster completion install
 
 ## Quick Start
 
+Use `bobster add` as the main path for discovery and installation:
+
 ```sh
-bobster list
-bobster search frontend
+bobster add security
+bobster add frontend
 bobster info skill/frontend-design
 bobster add skill/frontend-design
 bobster list --installed
@@ -95,7 +97,7 @@ bobster learn frontend-design
 bobster forget skill/frontend-design
 ```
 
-Discovery commands accept normal words. Use `bobster list` for a small catalog, `bobster list security` to narrow by topic, `bobster search appsec` to search aliases and keywords, or run `bobster add` in an interactive terminal to pick from a searchable list.
+`bobster add` accepts normal words and is the primary discovery path. Use `bobster add security` to search by topic or phrase, then pick a matching asset in an interactive terminal. Use `bobster list` for a small catalog, `bobster list security` to narrow by topic, or `bobster search appsec` when you only want search results without installing.
 
 Registry items use a few discovery fields:
 

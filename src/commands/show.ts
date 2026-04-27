@@ -5,6 +5,7 @@ const { itemId } = require("../output");
 const { fetchRegistryFile } = require("../registry/fetch-index");
 const { loadRegistryCommandContext } = require("./context");
 const { resolveRegistryItemForCommand } = require("./resolve");
+const { withSpinner } = require("../spinner");
 
 function requestedFiles(item, flags) {
   if (flags.all) {
@@ -44,14 +45,16 @@ async function runShow(context) {
   });
   const files = [];
 
-  for (const file of requestedFiles(item, flags)) {
-    const payload = await fetchRegistryFile(registryContext, item, file);
-    files.push({
-      content: payload.content,
-      path: file,
-      source: payload.source,
-    });
-  }
+  await withSpinner(context, "Loading asset files...", async () => {
+    for (const file of requestedFiles(item, flags)) {
+      const payload = await fetchRegistryFile(registryContext, item, file);
+      files.push({
+        content: payload.content,
+        path: file,
+        source: payload.source,
+      });
+    }
+  });
 
   if (flags.json) {
     io.out(

@@ -9,6 +9,7 @@ const { planInstall } = require("../installers/planner");
 const { loadRegistryCommandContext } = require("./context");
 const { runPlannedOperation } = require("./planned-operation");
 const { resolveInstalledItemForCommand } = require("./resolve");
+const { withSpinner } = require("../spinner");
 
 async function runUpdate(context) {
   const { args, cwd, flags, io } = context;
@@ -29,17 +30,19 @@ async function runUpdate(context) {
   const aggregatePlan = createWritePlan();
   const nextLockItems = [];
 
-  for (const installed of installedItems) {
-    const registryPrefix = installed.registry && registryContext.registryByName?.has(installed.registry)
-      ? `${installed.registry}/`
-      : "";
-    const item = resolveRegistryItem(registryContext.index, `${registryPrefix}${installed.type}/${installed.name}`);
-    const install = await planInstall(config, registryContext, item, {
-      allowOverwrite: true,
-    });
-    appendPlan(aggregatePlan, install.plan);
-    nextLockItems.push(install.lockEntry);
-  }
+  await withSpinner(context, "Preparing update plan...", async () => {
+    for (const installed of installedItems) {
+      const registryPrefix = installed.registry && registryContext.registryByName?.has(installed.registry)
+        ? `${installed.registry}/`
+        : "";
+      const item = resolveRegistryItem(registryContext.index, `${registryPrefix}${installed.type}/${installed.name}`);
+      const install = await planInstall(config, registryContext, item, {
+        allowOverwrite: true,
+      });
+      appendPlan(aggregatePlan, install.plan);
+      nextLockItems.push(install.lockEntry);
+    }
+  });
 
   await runPlannedOperation(context, {
     plan: aggregatePlan,

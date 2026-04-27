@@ -2,8 +2,11 @@
 
 const readline = require("node:readline/promises");
 const { AutoComplete, Select } = require("enquirer");
+const { TYPE_LABELS } = require("./constants");
 const { BobsterError } = require("./error");
 const { itemId } = require("./output");
+
+const SUGGESTION_TYPE_ORDER = ["mode", "rule", "skill"];
 
 function isReadlineClosedError(error) {
   return error?.code === "ERR_USE_AFTER_CLOSE" && /readline/i.test(error.message || "");
@@ -93,6 +96,7 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
   }
 
   const Prompt = options.searchable ? AutoComplete : Select;
+  const suggest = options.suggest ? { suggest: options.suggest } : {};
   const prompt = new Prompt({
     choices,
     limit: options.limit || Math.min(10, choices.length),
@@ -100,6 +104,7 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
     name: "selection",
     stdin: options.input || process.stdin,
     stdout: options.output || process.stderr,
+    ...suggest,
   });
   makePromptCleanupSafe(prompt);
 
@@ -113,13 +118,55 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
 function itemChoice(item) {
   const id = itemId(item);
   return {
+    itemType: item.type,
     name: id,
     message: `${id}  ${item.description || ""}`.trimEnd(),
   };
 }
 
+function groupChoicesByType(choices: any[]) {
+  const grouped = [];
+  const seen = new Set();
+
+  for (const type of SUGGESTION_TYPE_ORDER) {
+    const typeChoices = choices.filter((choice) => choice.itemType === type);
+    if (!typeChoices.length) {
+      continue;
+    }
+
+    seen.add(type);
+    grouped.push({
+      name: `__${type}_heading`,
+      message: TYPE_LABELS[type],
+      role: "heading",
+    });
+    grouped.push(...typeChoices);
+  }
+
+  grouped.push(...choices.filter((choice) => !seen.has(choice.itemType)));
+  return grouped;
+}
+
+function matchChoice(choice, input) {
+  const query = String(input || "").trim().toLowerCase();
+  return !query || String(choice.message || "").toLowerCase().includes(query);
+}
+
+function suggestGroupedChoices(input, choices: any[]) {
+  return groupChoicesByType(
+    choices
+      .filter((choice) => choice.role !== "heading")
+      .filter((choice) => matchChoice(choice, input)),
+  );
+}
+
 async function selectItem(message: string, items: any[], options: any = {}) {
-  const selectedId = await selectChoice(message, items.map(itemChoice), options);
+  const itemChoices = items.map(itemChoice);
+  const choices = options.groupByType ? groupChoicesByType(itemChoices) : itemChoices;
+  const selectedId = await selectChoice(message, choices, {
+    ...options,
+    suggest: options.groupByType ? suggestGroupedChoices : options.suggest,
+  });
   if (!selectedId) {
     return null;
   }
@@ -129,6 +176,8 @@ async function selectItem(message: string, items: any[], options: any = {}) {
 module.exports = {
   canPrompt,
   confirm,
+  groupChoicesByType,
   selectChoice,
   selectItem,
+  suggestGroupedChoices,
 };

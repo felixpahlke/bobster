@@ -10,6 +10,7 @@ const {
 const { fetchRegistryFile } = require("../registry/fetch-index");
 const { contextForItem } = require("../registry/fetch-index");
 const { extractModeSlug, mergeModeYaml } = require("../modes/custom-modes");
+const { normalizeSkillFrontmatter } = require("../skills/frontmatter");
 
 function targetFileForSkill(config, item, file) {
   assertSafeRelativePath(file, "registry file");
@@ -56,8 +57,9 @@ async function planInstall(config: any, registryContext: any, item: any, options
     for (const file of item.files) {
       const payload = await fetchRegistryFile(registryContext, item, file);
       const target = targetFileForSkill(config, item, file);
+      const content = file === item.entry ? normalizeSkillFrontmatter(payload.content) : payload.content;
       files.push(toDisplayPath(config.cwd, target));
-      await addPlannedWrite(plan, config.cwd, target, payload.content, {
+      await addPlannedWrite(plan, config.cwd, target, content, {
         allowOverwrite: options.allowOverwrite,
         item,
       });

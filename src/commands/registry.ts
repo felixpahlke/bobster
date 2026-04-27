@@ -9,6 +9,7 @@ const { fetchRegistryIndex } = require("../registry/fetch-index");
 const { writeRegistryIndex } = require("../registry/build-index");
 const { configuredRegistries } = require("../config/registries");
 const { parseSshGitRegistrySource } = require("../registry/git-source");
+const { withSpinner } = require("../spinner");
 
 function assertRegistryName(name) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(name || ""))) {
@@ -112,7 +113,9 @@ async function doctorRegistry(context) {
   const results = [];
   for (const registry of registries) {
     try {
-      const registryContext = await fetchRegistryIndex(registry.url, { cwd });
+      const registryContext = await withSpinner(context, `Checking registry ${registry.name}...`, () =>
+        fetchRegistryIndex(registry.url, { cwd, env }),
+      );
       results.push({
         items: registryContext.index.items.length,
         name: registry.name,

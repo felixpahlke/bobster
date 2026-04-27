@@ -64,6 +64,7 @@ async function resolveRegistryItemForCommand(context, registryContext, name, opt
     });
     const pickItem = options.selectItem || selectItem;
     const selected = await pickItem(options.message || "Did you mean one of these?", suggestions, {
+      groupByType: true,
       input: context.io.stdin,
       output: context.io.stderr,
     });
@@ -84,6 +85,7 @@ async function resolveRegistryItemForCommand(context, registryContext, name, opt
     if (hasAlternatives) {
       const pickItem = options.selectItem || selectItem;
       const selected = await pickItem(options.message || "Select an item", uniqueItems([resolved, ...searchMatches]), {
+        groupByType: true,
         input: context.io.stdin,
         output: context.io.stderr,
         searchable: options.searchable,
@@ -127,6 +129,7 @@ async function selectRegistryItemForCommand(context, items, options: any = {}) {
   }
 
   return selectItem(options.message || "Select an item", items, {
+    groupByType: true,
     input: context.io.stdin,
     output: context.io.stderr,
     searchable: options.searchable,
