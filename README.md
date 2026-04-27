@@ -114,13 +114,22 @@ bobster completion zsh
 
 ## Config
 
-`bobster.json` controls the target Bob folder and registry index:
+`bobster.json` controls the target Bob folder and registry indexes:
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/felixpahlke/bobster/main/schema/bobster.schema.json",
   "target": ".bob",
-  "registry": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry/index.json",
+  "registries": [
+    {
+      "name": "public",
+      "url": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry/index.json"
+    },
+    {
+      "name": "internal",
+      "url": "https://github.example.com/team/bobster-registry/blob/main/registry/index.json"
+    }
+  ],
   "paths": {
     "skills": ".bob/skills",
     "rules": ".bob/rules",
@@ -134,6 +143,52 @@ bobster completion zsh
 ```
 
 Use `--target .agents` if a project stores agent assets somewhere else.
+
+The legacy single `registry` field is still supported for one-registry projects.
+
+Add private or team registries with:
+
+```sh
+bobster registry add internal https://github.example.com/team/bobster-registry/blob/main/registry/index.json
+bobster registry doctor internal
+bobster add internal/rule/example-rule
+```
+
+For private GitHub or GitHub Enterprise registries, Bobster derives the host from the URL and uses the local GitHub CLI login when authentication is needed. Run `gh auth login -h <host>` if `registry doctor` reports an authentication error.
+
+## Private Registries
+
+Private registries use the same layout as the public registry:
+
+```txt
+registry/
+  index.json
+  skills/<name>/
+    bobster.json
+    SKILL.md
+  rules/<name>/
+    bobster.json
+    RULE.md
+  modes/<name>/
+    bobster.json
+    mode.yaml
+```
+
+Each item manifest lists the files that belong to the item:
+
+```json
+{
+  "name": "example-rule",
+  "type": "rule",
+  "version": "0.1.0",
+  "description": "Example project guidance for Bob.",
+  "tags": ["example"],
+  "files": ["RULE.md"],
+  "entry": "RULE.md"
+}
+```
+
+Maintain private registry clones outside this public repository, or place them under `.private-registries/` for local agent workflows. That folder is ignored and must not be committed.
 
 ## Develop Locally
 

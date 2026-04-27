@@ -10,6 +10,7 @@ The repository contains:
 - `registry/`: Versioned skills, rules, modes, and the generated `registry/index.json`.
 - `schema/`: JSON schemas for Bobster config and registry item manifests.
 - `test/`: Node test coverage for CLI behavior.
+- `.private-registries/`: Optional ignored workspace for local clones of private Bobster-compatible registries. Agents may use this folder to maintain private registry content alongside the public CLI repo, but must not commit files from it or mention private registry URLs in public docs.
 
 Bobster is an independent community project. It is not an official IBM project, product, or distribution.
 
