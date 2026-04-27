@@ -30,7 +30,10 @@ async function runUpdate(context) {
   const nextLockItems = [];
 
   for (const installed of installedItems) {
-    const item = resolveRegistryItem(registryContext.index, `${installed.type}/${installed.name}`);
+    const registryPrefix = installed.registry && registryContext.registryByName?.has(installed.registry)
+      ? `${installed.registry}/`
+      : "";
+    const item = resolveRegistryItem(registryContext.index, `${registryPrefix}${installed.type}/${installed.name}`);
     const install = await planInstall(config, registryContext, item, {
       allowOverwrite: true,
     });

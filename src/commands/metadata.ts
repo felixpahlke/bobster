@@ -4,7 +4,7 @@ const { ITEM_TYPES } = require("../constants");
 
 const SUPPORTED_SHELLS = ["zsh", "bash", "fish"];
 const COMPLETION_SUBCOMMANDS = ["install", ...SUPPORTED_SHELLS];
-const REGISTRY_SUBCOMMANDS = ["build", "validate"];
+const REGISTRY_SUBCOMMANDS = ["add", "list", "remove", "doctor", "build", "validate"];
 const GLOBAL_FLAGS = ["--help", "--version"];
 const VALUE_FLAGS = new Set(["--target", "--registry", "--type", "--base-url", "--file"]);
 
@@ -119,12 +119,17 @@ const COMMAND_HELP = {
     ],
   },
   registry: {
-    usage: "bobster registry <build|validate> [options]",
-    description: "Build or validate the committed registry/index.json file.",
+    usage: "bobster registry <add|list|remove|doctor|build|validate> [options]",
+    description: "Manage configured registries or build the committed registry/index.json file.",
     options: [
+      "add <name> <url>    Add a registry index URL or local index path.",
+      "list                List configured registries.",
+      "remove <name>       Remove a configured registry.",
+      "doctor [name]       Validate configured registry access and schema.",
       "--base-url <url>     Base URL to store in generated index.json.",
       "--check             Compare generated content with the committed index.",
-      "--json              Print the generated index JSON.",
+      "--force             Replace an existing registry with registry add.",
+      "--json              Print JSON.",
     ],
   },
 };
@@ -159,7 +164,7 @@ const COMMAND_FLAGS = {
   forget: ["--dry-run", "--yes", "--json", "--help"],
   update: ["--type", "--dry-run", "--yes", "--json", "--help"],
   completion: ["--dry-run", "--yes", "--json", "--help"],
-  registry: ["--base-url", "--check", "--json", "--help"],
+  registry: ["--base-url", "--check", "--force", "--json", "--help"],
   "registry:build": ["--base-url", "--check", "--json", "--help"],
   "registry:validate": ["--json", "--help"],
   help: [],
@@ -195,6 +200,9 @@ const COMMAND_OVERVIEW_GROUPS = [
   {
     heading: "REGISTRY COMMANDS",
     commands: [
+      ["registry add", "Add a public or private registry"],
+      ["registry list", "List configured registries"],
+      ["registry doctor", "Check registry access and schema"],
       ["registry build", "Rebuild registry/index.json"],
       ["registry validate", "Validate registry manifests and files"],
     ],

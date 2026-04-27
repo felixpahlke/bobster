@@ -24,6 +24,7 @@ function fuzzyContains(value, query) {
 function scoreItem(item, tokens) {
   const name = item.name.toLowerCase();
   const type = item.type.toLowerCase();
+  const registry = String(item.registry || "").toLowerCase();
   const description = item.description.toLowerCase();
   const tags = (item.tags || []).map((tag) => tag.toLowerCase());
   let score = 0;
@@ -34,9 +35,10 @@ function scoreItem(item, tokens) {
     if (tags.includes(token)) score += 45;
     if (name.includes(token)) score += 35;
     if (type.includes(token)) score += 25;
+    if (registry.includes(token)) score += 25;
     if (tags.some((tag) => tag.includes(token))) score += 20;
     if (description.includes(token)) score += 15;
-    if (fuzzyContains(`${type} ${name} ${tags.join(" ")} ${description}`, token)) score += 5;
+    if (fuzzyContains(`${registry} ${type} ${name} ${tags.join(" ")} ${description}`, token)) score += 5;
   }
 
   return score;

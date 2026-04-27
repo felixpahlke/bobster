@@ -15,6 +15,23 @@
     "registry": {
       "type": "string"
     },
+    "registries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "url"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "paths": {
       "type": "object",
       "additionalProperties": false,

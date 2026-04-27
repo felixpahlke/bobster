@@ -25,6 +25,7 @@ async function resolveRegistryItemForCommand(context, registryContext, name, opt
 
     const parsed = parseQualifiedName(name);
     const suggestions = suggestRegistryItems(registryContext.index.items, parsed.name, {
+      registry: parsed.registry,
       type: requestedTypeForName(name, context.flags),
     });
     const selected = await selectItem(options.message || "Did you mean one of these?", suggestions, {
@@ -48,6 +49,7 @@ async function resolveInstalledItemForCommand(context, lockfile, name, options: 
 
     const parsed = parseQualifiedName(name);
     const suggestions = suggestRegistryItems(lockfile.items || [], parsed.name, {
+      registry: parsed.registry,
       type: requestedTypeForName(name, context.flags),
     });
     const selected = await selectItem(options.message || "Did you mean one of these?", suggestions, {

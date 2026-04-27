@@ -44,14 +44,32 @@ Use `bobster init` only when you want to write a `bobster.json` config, set a cu
 
 ## Commands
 
-```sh
-bobster init [--target .bob] [--registry <url>] [--yes] [--force]
-bobster list [--type skill|rule|mode] [--installed] [--json]
-bobster search <query> [--type skill|rule|mode] [--json]
-bobster info <name> [--type skill|rule|mode] [--json]
-bobster add <name> [--dry-run] [--yes] [--force] [--json]
-bobster remove <name> [--dry-run] [--yes] [--json]
-bobster update [name] [--dry-run] [--yes] [--json]
+Run `bobster --help` for the first-level command overview:
+
+```text
+CORE COMMANDS
+  search:             Search the registry
+  info:               Show item metadata and install targets
+  show:               Print item file contents
+  add:                Install a skill, rule, or mode
+  remove:             Remove an installed item
+  update:             Reinstall installed items from the registry
+  list:               List registry or installed items
+
+SETUP COMMANDS
+  completion:         Install or print shell completions
+  init:               Write bobster.json for custom paths or registries
+
+ALIASES
+  learn:              Install a skill
+  forget:             Remove an installed item
+
+REGISTRY COMMANDS
+  registry add:       Add a public or private registry
+  registry list:      List configured registries
+  registry doctor:    Check registry access and schema
+  registry build:     Rebuild registry/index.json
+  registry validate:  Validate registry manifests and files
 ```
 
 Every command supports focused help:

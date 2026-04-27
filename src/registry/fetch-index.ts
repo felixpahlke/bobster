@@ -2,11 +2,15 @@
 
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { execFile } = require("node:child_process");
 const { fileURLToPath, pathToFileURL } = require("node:url");
+const { promisify } = require("node:util");
 const { BUNDLED_REGISTRY_INDEX, DEFAULT_REGISTRY } = require("../constants");
 const { BobsterError } = require("../error");
 const { assertSafeRelativePath } = require("../fs/safe-path");
 const { validateIndex } = require("./schemas");
+
+const execFileAsync = promisify(execFile);
 
 function isHttpSource(source) {
   return /^https?:\/\//i.test(source);
@@ -23,20 +27,149 @@ function resolveLocalSource(source, cwd) {
   return path.isAbsolute(source) ? source : path.resolve(cwd, source);
 }
 
+function githubBlobInfo(source) {
+  let url;
+  try {
+    url = new URL(source);
+  } catch {
+    return null;
+  }
+
+  const parts = url.pathname.split("/").filter(Boolean);
+  const blobIndex = parts.indexOf("blob");
+  if (blobIndex !== 2 || parts.length < 5) {
+    return null;
+  }
+
+  return {
+    host: url.hostname,
+    owner: parts[0],
+    path: parts.slice(4).join("/"),
+    ref: parts[3],
+    repo: parts[1],
+  };
+}
+
+function githubContentsUrl(info) {
+  const encodedPath = info.path.split("/").map(encodeURIComponent).join("/");
+  const encodedRepo = `${encodeURIComponent(info.owner)}/${encodeURIComponent(info.repo)}`;
+  const query = `ref=${encodeURIComponent(info.ref)}`;
+  if (info.host === "github.com") {
+    return `https://api.github.com/repos/${encodedRepo}/contents/${encodedPath}?${query}`;
+  }
+  return `https://${info.host}/api/v3/repos/${encodedRepo}/contents/${encodedPath}?${query}`;
+}
+
+function normalizeHttpSource(source) {
+  const info = githubBlobInfo(source);
+  if (info) {
+    return {
+      headers: {
+        Accept: "application/vnd.github.raw",
+      },
+      source: githubContentsUrl(info),
+    };
+  }
+
+  let url;
+  try {
+    url = new URL(source);
+  } catch {
+    return {
+      headers: {},
+      source,
+    };
+  }
+
+  const isGithubContentsApi =
+    (url.hostname === "api.github.com" && url.pathname.startsWith("/repos/") && url.pathname.includes("/contents/")) ||
+    (url.pathname.startsWith("/api/v3/repos/") && url.pathname.includes("/contents/"));
+
+  return {
+    headers: isGithubContentsApi ? { Accept: "application/vnd.github.raw" } : {},
+    source,
+  };
+}
+
+function githubAuthHost(source) {
+  let url;
+  try {
+    url = new URL(source);
+  } catch {
+    return null;
+  }
+
+  if (url.hostname === "api.github.com" || url.hostname === "raw.githubusercontent.com") {
+    return "github.com";
+  }
+  if (url.hostname.startsWith("raw.")) {
+    return url.hostname.slice("raw.".length);
+  }
+  return url.hostname.includes("github") ? url.hostname : null;
+}
+
+async function githubToken(host) {
+  try {
+    const result = await execFileAsync("gh", ["auth", "token", "-h", host], {
+      timeout: 10000,
+    });
+    return result.stdout.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchHttpText(source) {
+  if (typeof fetch !== "function") {
+    throw new BobsterError("This Node.js runtime does not provide fetch().");
+  }
+
+  const normalized = normalizeHttpSource(source);
+  const response = await fetch(normalized.source, {
+    headers: normalized.headers,
+  });
+  if (response.ok) {
+    return {
+      text: await response.text(),
+      url: normalized.source,
+    };
+  }
+
+  const authHost = githubAuthHost(normalized.source);
+  if (!authHost || ![401, 403, 404].includes(response.status)) {
+    throw new BobsterError(`Could not fetch ${source}: HTTP ${response.status}`);
+  }
+
+  const token = await githubToken(authHost);
+  if (!token) {
+    throw new BobsterError(
+      `Could not fetch ${source}: HTTP ${response.status}\n\nRun gh auth login -h ${authHost} if this is a private GitHub registry.`,
+    );
+  }
+
+  const authed = await fetch(normalized.source, {
+    headers: {
+      ...normalized.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!authed.ok) {
+    throw new BobsterError(`Could not fetch ${source}: HTTP ${authed.status}`);
+  }
+
+  return {
+    text: await authed.text(),
+    url: normalized.source,
+  };
+}
+
 async function readTextSource(source, cwd) {
   if (isHttpSource(source)) {
-    if (typeof fetch !== "function") {
-      throw new BobsterError("This Node.js runtime does not provide fetch().");
-    }
-
-    const response = await fetch(source);
-    if (!response.ok) {
-      throw new BobsterError(`Could not fetch ${source}: HTTP ${response.status}`);
-    }
+    const result = await fetchHttpText(source);
     return {
       localPath: null,
-      text: await response.text(),
-      url: source,
+      text: result.text,
+      url: result.url,
     };
   }
 
@@ -83,6 +216,49 @@ async function fetchRegistryIndex(registry: string, options: any = {}) {
   };
 }
 
+function annotateRegistryItem(item, registry, includeRegistry) {
+  const annotated = {
+    ...item,
+    registry: registry.name,
+  };
+  Object.defineProperty(annotated, "_includeRegistry", {
+    enumerable: false,
+    value: includeRegistry,
+  });
+  return annotated;
+}
+
+async function fetchRegistryIndexes(registries: any[], options: any = {}) {
+  const contexts = [];
+  for (const registry of registries) {
+    const context: any = await fetchRegistryIndex(registry.url, options);
+    context.name = registry.name;
+    context.registryUrl = registry.url;
+    contexts.push(context);
+  }
+
+  const includeRegistry = contexts.length > 1;
+  const items = contexts.flatMap((context) =>
+    context.index.items.map((item) =>
+      annotateRegistryItem(item, { name: context.name }, includeRegistry),
+    ),
+  );
+  const registryByName = new Map(contexts.map((context) => [context.name, context]));
+
+  return {
+    index: {
+      schemaVersion: 1,
+      generatedAt: new Date().toISOString(),
+      items,
+    },
+    registries: contexts,
+    registry: contexts.length === 1 ? contexts[0].registry : "multiple",
+    registryByName,
+    resolvedRegistry: contexts.length === 1 ? contexts[0].resolvedRegistry : null,
+    usedFallback: contexts.some((context) => context.usedFallback),
+  };
+}
+
 function joinRemoteUrl(baseUrl, ...parts) {
   let current = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   for (const part of parts) {
@@ -94,18 +270,26 @@ function joinRemoteUrl(baseUrl, ...parts) {
   return current;
 }
 
+function contextForItem(registryContext, item) {
+  if (!registryContext.registryByName || !item.registry) {
+    return registryContext;
+  }
+  return registryContext.registryByName.get(item.registry) || registryContext;
+}
+
 async function fetchRegistryFile(registryContext, item, file) {
   assertSafeRelativePath(file, "registry file");
+  const sourceContext = contextForItem(registryContext, item);
 
-  if (registryContext.localRegistryRoot) {
-    const localPath = path.join(registryContext.localRegistryRoot, item.path, file);
+  if (sourceContext.localRegistryRoot) {
+    const localPath = path.join(sourceContext.localRegistryRoot, item.path, file);
     return {
       content: await fs.readFile(localPath, "utf8"),
       source: pathToFileURL(localPath).href,
     };
   }
 
-  const baseUrl = registryContext.index.baseUrl;
+  const baseUrl = sourceContext.index.baseUrl;
   if (!baseUrl) {
     throw new BobsterError("Registry index does not define baseUrl.");
   }
@@ -131,8 +315,11 @@ async function fetchRegistryFile(registryContext, item, file) {
 }
 
 module.exports = {
+  contextForItem,
+  fetchRegistryIndexes,
   fetchRegistryFile,
   fetchRegistryIndex,
+  githubBlobInfo,
   isHttpSource,
   readTextSource,
 };

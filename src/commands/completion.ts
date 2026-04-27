@@ -8,7 +8,7 @@ const { loadConfig } = require("../config/load-config");
 const { BobsterError } = require("../error");
 const { readLockfile } = require("../lockfile/lockfile");
 const { confirm } = require("../prompt");
-const { fetchRegistryIndex } = require("../registry/fetch-index");
+const { fetchRegistryIndexes } = require("../registry/fetch-index");
 const { normalizeType } = require("../registry/schemas");
 const {
   COMMAND_FLAGS,
@@ -350,14 +350,23 @@ function itemSuggestions(items, options: any = {}) {
   const current = options.current || "";
   let type = options.type || null;
   const explicitType = parsedTypePrefix(current);
+  const explicitRegistry = parsedRegistryPrefix(current);
 
-  if (explicitType) {
+  if (explicitRegistry?.type) {
+    type = explicitRegistry.type;
+  } else if (explicitType) {
     type = explicitType;
   }
 
   const matchingItems = items.filter((item) => {
-    return (!type || item.type === type) && (!options.allowedTypes || options.allowedTypes.includes(item.type));
+    return (!type || item.type === type) &&
+      (!explicitRegistry?.registry || item.registry === explicitRegistry.registry) &&
+      (!options.allowedTypes || options.allowedTypes.includes(item.type));
   });
+
+  if (explicitRegistry?.registry) {
+    return byCurrent(matchingItems.map((item) => `${item.registry}/${item.type}/${item.name}`), current);
+  }
 
   if (explicitType) {
     return byCurrent(matchingItems.map((item) => `${item.type}/${item.name}`), current);
@@ -386,9 +395,37 @@ function parsedTypePrefix(current) {
   }
 }
 
+function parsedRegistryPrefix(current) {
+  const parts = current.split("/");
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    normalizeType(parts[0]);
+    return null;
+  } catch {
+    // The first segment is not an item type, so treat it as a registry name.
+  }
+
+  let type = null;
+  if (parts[1]) {
+    try {
+      type = normalizeType(parts[1]);
+    } catch {
+      type = null;
+    }
+  }
+
+  return {
+    registry: parts[0],
+    type,
+  };
+}
+
 async function registryItems(cwd, flags) {
   const config = loadConfig(cwd, flags);
-  const registryContext = await fetchRegistryIndex(config.registry, { cwd });
+  const registryContext = await fetchRegistryIndexes(config.registries, { cwd });
   return registryContext.index.items;
 }
 

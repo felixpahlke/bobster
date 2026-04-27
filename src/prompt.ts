@@ -59,9 +59,10 @@ async function selectChoice(message: string, choices: any[], options: any = {}) 
 }
 
 function itemChoice(item) {
+  const id = itemId(item);
   return {
-    name: itemId(item),
-    message: `${itemId(item)}  ${item.description || ""}`.trimEnd(),
+    name: id,
+    message: `${id}  ${item.description || ""}`.trimEnd(),
   };
 }
 

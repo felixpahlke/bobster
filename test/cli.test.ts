@@ -87,6 +87,39 @@ async function writeBundledRuleRegistry(cwd: string) {
   return path.join(registryRoot, "index.json");
 }
 
+async function writeRuleRegistry(cwd: string, folder: string, itemName: string, body: string) {
+  const registryRoot = path.join(cwd, folder);
+  const ruleRoot = path.join(registryRoot, "rules", itemName);
+  await fs.mkdir(ruleRoot, { recursive: true });
+  await fs.writeFile(path.join(ruleRoot, "RULE.md"), body, "utf8");
+  await fs.writeFile(
+    path.join(registryRoot, "index.json"),
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: "2026-04-24T00:00:00.000Z",
+        baseUrl: "https://example.com/registry",
+        items: [
+          {
+            name: itemName,
+            type: "rule",
+            version: "0.1.0",
+            description: `Rule from ${folder}.`,
+            tags: ["rules"],
+            path: `rules/${itemName}`,
+            files: ["RULE.md"],
+            entry: "RULE.md",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  return path.join(registryRoot, "index.json");
+}
+
 test("init creates config, Bob folders, and custom mode file", async () => {
   const cwd = await tempProject();
 
@@ -149,7 +182,35 @@ test("help is available globally, per command, and through help <command>", asyn
   assert.match(show.stdout, /--all/);
 
   const registry = await cli(cwd, ["registry", "--help"]);
-  assert.match(registry.stdout, /build\|validate/);
+  assert.match(registry.stdout, /add\|list\|remove\|doctor\|build\|validate/);
+});
+
+test("registry add, list, doctor, and remove manage project registries", async () => {
+  const cwd = await tempProject();
+  const teamRegistryPath = await writeRuleRegistry(cwd, "team-registry", "team-rule", "# Team Rule\n");
+
+  await cli(cwd, ["registry", "add", "team", teamRegistryPath]);
+
+  const config = await readJson(path.join(cwd, "bobster.json"));
+  assert.deepEqual(
+    config.registries.map((registry) => registry.name),
+    ["public", "team"],
+  );
+  assert.equal(config.registries[1].url, teamRegistryPath);
+
+  const list = await cli(cwd, ["registry", "list"]);
+  assert.match(list.stdout, /public\s+/);
+  assert.match(list.stdout, new RegExp(`team\\s+${escapeRegExp(teamRegistryPath)}`));
+
+  const doctor = await cli(cwd, ["registry", "doctor", "team"]);
+  assert.match(doctor.stdout, /team: ok \(1 items\)/);
+
+  await cli(cwd, ["registry", "remove", "team"]);
+  const updated = await readJson(path.join(cwd, "bobster.json"));
+  assert.deepEqual(
+    updated.registries.map((registry) => registry.name),
+    ["public"],
+  );
 });
 
 test("completion suggests registry skills and rules", async () => {
@@ -373,6 +434,34 @@ test("bundled rules install as directories while single-file rules stay flat", a
   await fs.access(path.join(flatCwd, ".bob", "rules", "no-secrets.md"));
 });
 
+test("multiple registries resolve and install registry-qualified items", async () => {
+  const cwd = await tempProject();
+  const teamRegistryPath = await writeRuleRegistry(cwd, "team-registry", "team-rule", "# Team Rule\n");
+  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+
+  const configPath = path.join(cwd, "bobster.json");
+  const config = await readJson(configPath);
+  config.registries = [
+    { name: "public", url: registryPath },
+    { name: "team", url: teamRegistryPath },
+  ];
+  await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  const list = await cli(cwd, ["list"]);
+  assert.match(list.stdout, /public\/skill\/frontend-design/);
+  assert.match(list.stdout, /team\/rule\/team-rule/);
+
+  const teamOnly = await cli(cwd, ["list", "--registry", "team"]);
+  assert.match(teamOnly.stdout, /team-rule/);
+  assert.doesNotMatch(teamOnly.stdout, /frontend-design/);
+
+  await cli(cwd, ["add", "team/rule/team-rule", "--yes"]);
+  assert.match(await fs.readFile(path.join(cwd, ".bob", "rules", "team-rule.md"), "utf8"), /Team Rule/);
+
+  const lockfile = await readJson(path.join(cwd, "bobster-lock.json"));
+  assert.equal(lockfile.items[0].registry, "team");
+});
+
 test("dry-run and JSON add output report planned writes without touching disk", async () => {
   const cwd = await tempProject();
   await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
@@ -419,6 +508,43 @@ test("add suggests close registry names for typos", async () => {
   await assert.rejects(
     () => cli(cwd, ["add", "frntend-design", "--registry", registryPath, "--yes"]),
     /Did you mean one of these\?[\s\S]*skill\/frontend-design/,
+  );
+});
+
+test("ambiguous items require registry-qualified names", async () => {
+  const cwd = await tempProject();
+  const publicRegistryPath = await writeRuleRegistry(cwd, "public-registry", "shared-rule", "# Public Rule\n");
+  const teamRegistryPath = await writeRuleRegistry(cwd, "team-registry", "shared-rule", "# Team Rule\n");
+  await cli(cwd, ["init", "--registry", publicRegistryPath, "--yes"]);
+
+  const configPath = path.join(cwd, "bobster.json");
+  const config = await readJson(configPath);
+  config.registries = [
+    { name: "public", url: publicRegistryPath },
+    { name: "team", url: teamRegistryPath },
+  ];
+  await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+  await assert.rejects(
+    () => cli(cwd, ["add", "rule/shared-rule", "--yes"]),
+    /Multiple items found[\s\S]*public\/rule\/shared-rule[\s\S]*team\/rule\/shared-rule/,
+  );
+
+  await cli(cwd, ["add", "team/rule/shared-rule", "--yes"]);
+  assert.match(await fs.readFile(path.join(cwd, ".bob", "rules", "shared-rule.md"), "utf8"), /Team Rule/);
+});
+
+test("GitHub blob registry URLs derive API fetch URLs", () => {
+  const { githubBlobInfo } = require("../src/registry/fetch-index");
+  assert.deepEqual(
+    githubBlobInfo("https://github.example.com/team/repo/blob/main/registry/index.json"),
+    {
+      host: "github.example.com",
+      owner: "team",
+      path: "registry/index.json",
+      ref: "main",
+      repo: "repo",
+    },
   );
 });
 

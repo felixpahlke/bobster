@@ -2,8 +2,12 @@
 
 const { TYPE_LABELS } = require("./constants");
 
-function itemId(item) {
-  return `${item.type}/${item.name}`;
+function itemId(item, options: any = {}) {
+  const id = `${item.type}/${item.name}`;
+  if ((options.includeRegistry || item._includeRegistry) && item.registry) {
+    return `${item.registry}/${id}`;
+  }
+  return id;
 }
 
 function formatItemId(item, theme) {
@@ -48,10 +52,14 @@ function formatGroupedItems(items: any[], options: any = {}) {
       continue;
     }
 
-    const width = Math.max(...typeItems.map((item) => item.name.length), 10);
+    const width = Math.max(
+      ...typeItems.map((item) => (item._includeRegistry ? itemId(item, { includeRegistry: true }) : item.name).length),
+      10,
+    );
     sections.push(theme ? theme.heading(TYPE_LABELS[type]) : TYPE_LABELS[type]);
     for (const item of typeItems) {
-      const paddedName = item.name.padEnd(width);
+      const label = item._includeRegistry ? itemId(item, { includeRegistry: true }) : item.name;
+      const paddedName = label.padEnd(width);
       const name = theme ? theme.id(paddedName) : paddedName;
       sections.push(`  ${name}  ${item.description}`);
     }

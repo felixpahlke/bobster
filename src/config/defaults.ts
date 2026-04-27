@@ -29,6 +29,21 @@ function defaultConfig(target = DEFAULT_TARGET) {
   };
 }
 
+function defaultRegistryName(registry = DEFAULT_REGISTRY) {
+  const url = registry || DEFAULT_REGISTRY;
+  return url === DEFAULT_REGISTRY ? "public" : "default";
+}
+
+function defaultRegistries(registry = DEFAULT_REGISTRY) {
+  const url = registry || DEFAULT_REGISTRY;
+  return [
+    {
+      name: defaultRegistryName(url),
+      url,
+    },
+  ];
+}
+
 function resolveConfigPath(cwd) {
   return path.join(cwd, "bobster.json");
 }
@@ -36,5 +51,7 @@ function resolveConfigPath(cwd) {
 module.exports = {
   defaultConfig,
   defaultPaths,
+  defaultRegistries,
+  defaultRegistryName,
   resolveConfigPath,
 };

@@ -8,6 +8,7 @@ const {
   readFileIfExists,
 } = require("../fs/write-plan");
 const { fetchRegistryFile } = require("../registry/fetch-index");
+const { contextForItem } = require("../registry/fetch-index");
 const { extractModeSlug, mergeModeYaml } = require("../modes/custom-modes");
 
 function targetFileForSkill(config, item, file) {
@@ -32,12 +33,14 @@ function targetFileForMode(config) {
 }
 
 function lockEntryForItem(config: any, registryContext: any, item: any, files: string[], extra: any = {}) {
+  const sourceContext = contextForItem(registryContext, item);
+  const baseUrl = sourceContext.index.baseUrl || sourceContext.resolvedRegistry;
   return {
     type: item.type,
     name: item.name,
     version: item.version,
-    source: `${registryContext.index.baseUrl || registryContext.resolvedRegistry}/${item.path}`,
-    registry: registryContext.registry,
+    source: `${baseUrl}/${item.path}`,
+    registry: item.registry || sourceContext.name || sourceContext.registry,
     files,
     ...extra,
   };

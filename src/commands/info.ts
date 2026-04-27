@@ -3,6 +3,7 @@
 const { BobsterError } = require("../error");
 const { formatItemId } = require("../output");
 const { installsRuleAsDirectory } = require("../installers/planner");
+const { contextForItem } = require("../registry/fetch-index");
 const { loadRegistryCommandContext } = require("./context");
 const { resolveRegistryItemForCommand } = require("./resolve");
 
@@ -37,6 +38,8 @@ async function runInfo(context) {
   }
 
   const theme = context.theme;
+  const sourceContext = contextForItem(registryContext, item);
+  const sourceBase = sourceContext.index.baseUrl || sourceContext.resolvedRegistry;
   const heading = (value) => (theme ? theme.heading(value) : value);
   io.out(
     [
@@ -57,8 +60,11 @@ async function runInfo(context) {
       heading("Install target:"),
       `  ${installTarget(config, item)}`,
       "",
+      heading("Registry:"),
+      `  ${item.registry || sourceContext.name || sourceContext.registry}`,
+      "",
       heading("Source:"),
-      `  ${registryContext.index.baseUrl}/${item.path}`,
+      `  ${sourceBase}/${item.path}`,
     ].join("\n"),
   );
 }

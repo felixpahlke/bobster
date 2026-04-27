@@ -6,17 +6,43 @@ const { normalizeType } = require("./schemas");
 
 function parseQualifiedName(value) {
   const input = String(value || "").trim();
-  const slash = input.indexOf("/");
-  if (slash === -1) {
+  const parts = input.split("/").filter(Boolean);
+  if (parts.length >= 3) {
     return {
-      name: input,
+      name: parts.slice(2).join("/"),
+      registry: parts[0],
+      type: normalizeType(parts[1]),
+    };
+  }
+
+  if (parts.length === 2) {
+    try {
+      return {
+        name: parts[1],
+        registry: null,
+        type: normalizeType(parts[0]),
+      };
+    } catch {
+      return {
+        name: parts[1],
+        registry: parts[0],
+        type: null,
+      };
+    }
+  }
+
+  if (parts.length === 1) {
+    return {
+      name: parts[0],
+      registry: null,
       type: null,
     };
   }
 
   return {
-    name: input.slice(slash + 1),
-    type: normalizeType(input.slice(0, slash)),
+    name: "",
+    registry: null,
+    type: null,
   };
 }
 
@@ -24,7 +50,9 @@ function resolveRegistryItem(index: any, value: string, options: any = {}) {
   const parsed = parseQualifiedName(value);
   const requestedType = options.type ? normalizeType(options.type) : parsed.type;
   const matches = index.items.filter((item) => {
-    return item.name === parsed.name && (!requestedType || item.type === requestedType);
+    return item.name === parsed.name &&
+      (!requestedType || item.type === requestedType) &&
+      (!parsed.registry || item.registry === parsed.registry);
   });
 
   if (matches.length === 1) {
@@ -36,9 +64,9 @@ function resolveRegistryItem(index: any, value: string, options: any = {}) {
       [
         `Multiple items found for "${value}":`,
         "",
-        ...matches.map((item) => `  ${itemId(item)}`),
+        ...matches.map((item) => `  ${itemId(item, { includeRegistry: Boolean(item.registry) })}`),
         "",
-        "Use a type-qualified name such as skill/name, rule/name, or mode/name.",
+        "Use a registry-qualified name such as public/skill/name or team/rule/name.",
       ].join("\n"),
     );
   }
@@ -54,7 +82,9 @@ function resolveInstalledItem(lockfile: any, value: string, options: any = {}) {
   const parsed = parseQualifiedName(value);
   const requestedType = options.type ? normalizeType(options.type) : parsed.type;
   const matches = lockfile.items.filter((item) => {
-    return item.name === parsed.name && (!requestedType || item.type === requestedType);
+    return item.name === parsed.name &&
+      (!requestedType || item.type === requestedType) &&
+      (!parsed.registry || item.registry === parsed.registry);
   });
 
   if (matches.length === 1) {
@@ -66,9 +96,9 @@ function resolveInstalledItem(lockfile: any, value: string, options: any = {}) {
       [
         `Multiple installed items found for "${value}":`,
         "",
-        ...matches.map((item) => `  ${item.type}/${item.name}`),
+        ...matches.map((item) => `  ${itemId(item, { includeRegistry: Boolean(item.registry) })}`),
         "",
-        "Use a type-qualified name.",
+        "Use a registry-qualified name.",
       ].join("\n"),
     );
   }
@@ -121,7 +151,7 @@ function fuzzyContains(value, query) {
 function suggestionScore(item, name) {
   const normalized = name.toLowerCase();
   const itemName = item.name.toLowerCase();
-  const fullName = itemId(item).toLowerCase();
+  const fullName = itemId(item, { includeRegistry: Boolean(item.registry) }).toLowerCase();
   const tags = (item.tags || []).map((tag) => tag.toLowerCase());
   const haystack = `${fullName} ${tags.join(" ")} ${String(item.description || "").toLowerCase()}`;
   const distance = editDistance(normalized, itemName);
@@ -144,6 +174,7 @@ function suggestionScore(item, name) {
 
 function suggestRegistryItems(items, name, options: any = {}) {
   const type = options.type || null;
+  const registry = options.registry || null;
   const limit = options.limit || 5;
   const normalized = String(name || "").toLowerCase();
   if (!normalized) {
@@ -151,7 +182,7 @@ function suggestRegistryItems(items, name, options: any = {}) {
   }
 
   return items
-    .filter((item) => !type || item.type === type)
+    .filter((item) => (!type || item.type === type) && (!registry || item.registry === registry))
     .map((item) => ({ item, score: suggestionScore(item, normalized) }))
     .filter((result) => result.score >= 20)
     .sort((a, b) => b.score - a.score || itemId(a.item).localeCompare(itemId(b.item)))
