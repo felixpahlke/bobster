@@ -25,3 +25,8 @@
 - Centralize write-plan path summary generation.
 - Replace duplicate plan JSON mapping in `init`, `add`, `remove`, and `update`.
 - Preserve current JSON output shapes for existing commands.
+
+## Completed Slices
+
+- Centralized write-plan path summaries in `src/fs/write-plan.ts`.
+- Moved GitHub/HTTP registry URL normalization, GitHub auth retry, and HTTP fetch handling into `src/registry/github-source.ts`.

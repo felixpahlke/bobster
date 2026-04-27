@@ -14,7 +14,7 @@ Install the CLI globally:
 npm install -g bobster-cli@latest
 ```
 
-Install shell completions:
+Install shell completions (TAB complete):
 
 ```sh
 bobster completion install
@@ -22,12 +22,20 @@ bobster completion install
 
 ## Quick Start
 
-Use `bobster add` as the main path for discovery and installation:
+Use `bobster add` as the main path for discovery and installation. Type `bobster add <topic-you-need>` and you will get a list of suggested skills, rules, and custom modes that you can then directly add to your project.
 
 ```sh
+# try
 bobster add security
+# or
 bobster add frontend
+```
+
+If you already know the asset you want, inspect its metadata and preview its files before installing it by full registry ID:
+
+```sh
 bobster info skill/frontend-design
+bobster show skill/frontend-design
 bobster add skill/frontend-design
 bobster list --installed
 ```

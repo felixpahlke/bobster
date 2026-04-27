@@ -1,7 +1,8 @@
 # Project State
 
-- Maintainability refactor plan added at `.plans/maintainability-refactor.md`; first slice centralizes write-plan path summaries for init/add/remove/update JSON output.
+- Maintainability refactor plan added at `.plans/maintainability-refactor.md`; completed slices centralize write-plan path summaries and split GitHub/HTTP registry source handling out of `fetch-index`.
 - README install and quick-start docs now make `bobster add <term>` the primary discovery/install path, with `bobster add security` as the lead example.
+- README quick start now shows the direct asset flow: `info`, `show`, `add`, then `list --installed`.
 - Private registries may live under `.private-registries/`; this path is ignored and can contain private clones for local agent maintenance.
 - Imported Bob `Modes/` into `.private-registries/bobster-registry-internal` as private mode registry items with `origin` metadata.
 - Promotion path: review private imported content item by item before copying to public `registry/`; strip or replace private `origin` metadata before public release.
