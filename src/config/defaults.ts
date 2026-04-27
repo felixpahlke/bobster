@@ -20,7 +20,6 @@ function defaultConfig(target = DEFAULT_TARGET) {
     $schema:
       "https://raw.githubusercontent.com/felixpahlke/bobster/main/schema/bobster.schema.json",
     target,
-    registry: DEFAULT_REGISTRY,
     paths: defaultPaths(target),
     defaults: {
       confirmWrites: true,

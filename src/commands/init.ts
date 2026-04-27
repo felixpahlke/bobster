@@ -3,6 +3,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { defaultConfig, defaultPaths, resolveConfigPath } = require("../config/defaults");
+const { BobsterError } = require("../error");
 const { resolveProjectPath } = require("../fs/safe-path");
 const {
   addPlannedWrite,
@@ -36,9 +37,12 @@ async function inferTarget(cwd, flags) {
 
 async function runInit(context) {
   const { cwd, flags, io } = context;
+  if (flags.registry) {
+    throw new BobsterError("bobster init no longer configures registries. Use bobster registry add <name> <url>.");
+  }
+
   const target = await inferTarget(cwd, flags);
   const config = defaultConfig(target);
-  config.registry = flags.registry || config.registry;
   config.paths = defaultPaths(target);
 
   const plan = createWritePlan();

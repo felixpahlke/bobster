@@ -22,8 +22,30 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function testGlobalConfigPath(cwd: string) {
+  return path.join(cwd, ".bobster-config.json");
+}
+
+async function writeTestGlobalConfig(cwd: string, registries: any[] = [{ name: "public", url: registryPath }]) {
+  await fs.writeFile(
+    testGlobalConfigPath(cwd),
+    `${JSON.stringify({ registries }, null, 2)}\n`,
+    "utf8",
+  );
+}
+
 async function tempProject() {
-  return fs.mkdtemp(path.join(os.tmpdir(), "bobster-test-"));
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "bobster-test-"));
+  await writeTestGlobalConfig(cwd);
+  return cwd;
+}
+
+function testEnv(cwd: string) {
+  return {
+    ...process.env,
+    BOBSTER_CACHE: path.join(cwd, ".bobster-cache"),
+    BOBSTER_CONFIG: testGlobalConfigPath(cwd),
+  };
 }
 
 async function cli(cwd: string, args: string[], options: any = {}) {
@@ -40,7 +62,13 @@ async function cli(cwd: string, args: string[], options: any = {}) {
       stderr.push(message);
     },
   };
-  await main(args, { color: options.color, cwd, io, updateCheck: options.updateCheck });
+  await main(args, {
+    color: options.color,
+    cwd,
+    env: options.env || testEnv(cwd),
+    io,
+    updateCheck: options.updateCheck,
+  });
   return {
     stderr: stderr.join("\n"),
     stdout: stdout.join("\n"),
@@ -136,11 +164,12 @@ async function writeRuleRegistry(cwd: string, folder: string, itemName: string, 
 test("init creates config, Bob folders, and custom mode file", async () => {
   const cwd = await tempProject();
 
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   const config = await readJson(path.join(cwd, "bobster.json"));
   assert.equal(config.target, ".bob");
-  assert.equal(config.registry, registryPath);
+  assert.equal(config.registry, undefined);
+  assert.equal(config.registries, undefined);
   assert.equal(await fs.readFile(path.join(cwd, ".bob", "custom_modes.yaml"), "utf8"), "customModes: []\n");
   await fs.access(path.join(cwd, ".bob", "skills"));
   await fs.access(path.join(cwd, ".bob", "rules"));
@@ -159,7 +188,7 @@ test("init preserves existing Bob folders and custom modes", async () => {
   await fs.writeFile(rulePath, "local rule\n", "utf8");
   await fs.writeFile(modesPath, modesContent, "utf8");
 
-  const output = await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  const output = await cli(cwd, ["init", "--yes"]);
 
   assert.match(output.stdout, /Existing paths preserved:/);
   assert.match(output.stdout, /\.bob\/custom_modes\.yaml/);
@@ -169,7 +198,17 @@ test("init preserves existing Bob folders and custom modes", async () => {
 
   const config = await readJson(path.join(cwd, "bobster.json"));
   assert.equal(config.target, ".bob");
-  assert.equal(config.registry, registryPath);
+  assert.equal(config.registry, undefined);
+  assert.equal(config.registries, undefined);
+});
+
+test("init does not accept registry configuration", async () => {
+  const cwd = await tempProject();
+
+  await assert.rejects(
+    () => cli(cwd, ["init", "--registry", registryPath, "--yes"]),
+    /bobster init no longer configures registries/,
+  );
 });
 
 test("help is available globally, per command, and through help <command>", async () => {
@@ -198,13 +237,14 @@ test("help is available globally, per command, and through help <command>", asyn
   assert.match(registry.stdout, /add\|list\|remove\|doctor\|build\|validate/);
 });
 
-test("registry add, list, doctor, and remove manage project registries", async () => {
+test("registry add, list, doctor, and remove manage global registries", async () => {
   const cwd = await tempProject();
   const teamRegistryPath = await writeRuleRegistry(cwd, "team-registry", "team-rule", "# Team Rule\n");
 
   await cli(cwd, ["registry", "add", "team", teamRegistryPath]);
 
-  const config = await readJson(path.join(cwd, "bobster.json"));
+  await assert.rejects(() => fs.access(path.join(cwd, "bobster.json")), /ENOENT/);
+  const config = await readJson(testGlobalConfigPath(cwd));
   assert.deepEqual(
     config.registries.map((registry) => registry.name),
     ["public", "team"],
@@ -219,45 +259,42 @@ test("registry add, list, doctor, and remove manage project registries", async (
   assert.match(doctor.stdout, /team: ok \(1 items\)/);
 
   await cli(cwd, ["registry", "remove", "team"]);
-  const updated = await readJson(path.join(cwd, "bobster.json"));
+  const updated = await readJson(testGlobalConfigPath(cwd));
   assert.deepEqual(
     updated.registries.map((registry) => registry.name),
     ["public"],
   );
 });
 
-test("registry add accepts SSH Git registry shorthand and infers a local checkout", async () => {
+test("project bobster.json registry fields do not configure registries", async () => {
   const cwd = await tempProject();
-  const checkoutRegistry = path.join(cwd, ".private-registries", "bobster-registry-internal", "registry");
-  await fs.mkdir(checkoutRegistry, { recursive: true });
+  const projectRegistryPath = await writeRuleRegistry(cwd, "project-registry", "project-rule", "# Project Rule\n");
   await fs.writeFile(
-    path.join(checkoutRegistry, "index.json"),
-    `${JSON.stringify(
-      {
-        schemaVersion: 1,
-        generatedAt: "2026-04-24T00:00:00.000Z",
-        items: [],
-      },
-      null,
-      2,
-    )}\n`,
+    path.join(cwd, "bobster.json"),
+    `${JSON.stringify({ target: ".bob", registries: [{ name: "project", url: projectRegistryPath }] }, null, 2)}\n`,
     "utf8",
   );
 
+  const list = await cli(cwd, ["list"]);
+  assert.doesNotMatch(list.stdout, /project-rule/);
+  assert.match(list.stdout, /frontend-design/);
+});
+
+test("registry add accepts SSH Git registry shorthand without a project checkout", async () => {
+  const cwd = await tempProject();
+
   await cli(cwd, ["registry", "add", "ssh/git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git"]);
 
-  const config = await readJson(path.join(cwd, "bobster.json"));
+  await assert.rejects(() => fs.access(path.join(cwd, ".private-registries")), /ENOENT/);
+  const config = await readJson(testGlobalConfigPath(cwd));
   assert.deepEqual(
     config.registries.map((registry) => registry.name),
     ["public", "internal"],
   );
   assert.equal(
     config.registries[1].url,
-    path.join(".private-registries", "bobster-registry-internal", "registry", "index.json"),
+    "git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git",
   );
-
-  const doctor = await cli(cwd, ["registry", "doctor", "internal"]);
-  assert.match(doctor.stdout, /internal: ok \(0 items\)/);
 });
 
 test("SSH Git registry sources parse optional prefixes", () => {
@@ -266,16 +303,16 @@ test("SSH Git registry sources parse optional prefixes", () => {
   assert.deepEqual(
     parseSshGitRegistrySource("ssh/git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git"),
     {
-      cloneUrl: "git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git",
       name: "internal",
+      remote: "git@github.ibm.com:Felix-Pahlke/bobster-registry-internal.git",
       repoName: "bobster-registry-internal",
     },
   );
   assert.deepEqual(
     parseSshGitRegistrySource("ssh://git@github.ibm.com/Felix-Pahlke/bobster-registry-internal.git"),
     {
-      cloneUrl: "ssh://git@github.ibm.com/Felix-Pahlke/bobster-registry-internal.git",
       name: "internal",
+      remote: "ssh://git@github.ibm.com/Felix-Pahlke/bobster-registry-internal.git",
       repoName: "bobster-registry-internal",
     },
   );
@@ -316,7 +353,7 @@ test("GitHub repository tree registry URLs resolve to raw index content", async 
 
 test("completion suggests registry skills and rules", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   const unqualified = await cli(cwd, ["__complete", "--", "add", "wats"]);
   assert.match(unqualified.stdout, /^watsonx-orchestrate$/m);
@@ -397,7 +434,7 @@ test("completion install writes shell hook and managed zsh config", async () => 
 
 test("completion honors type filters and installed item commands", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
   await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
   await cli(cwd, ["add", "rule/no-secrets", "--yes"]);
 
@@ -529,7 +566,7 @@ test("update checks are skipped for JSON output", async () => {
 
 test("add installs skill, rule, and mode and writes a lockfile", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
   await cli(cwd, ["add", "rule/no-secrets", "--yes"]);
@@ -550,7 +587,8 @@ test("add installs skill, rule, and mode and writes a lockfile", async () => {
 test("bundled rules install as directories while single-file rules stay flat", async () => {
   const cwd = await tempProject();
   const bundledRegistryPath = await writeBundledRuleRegistry(cwd);
-  await cli(cwd, ["init", "--registry", bundledRegistryPath, "--yes"]);
+  await writeTestGlobalConfig(cwd, [{ name: "public", url: bundledRegistryPath }]);
+  await cli(cwd, ["init", "--yes"]);
 
   const info = await cli(cwd, ["info", "rule/bundled-rule"]);
   assert.match(info.stdout, /\.bob\/rules\/bundled-rule\//);
@@ -573,7 +611,7 @@ test("bundled rules install as directories while single-file rules stay flat", a
   ]);
 
   const flatCwd = await tempProject();
-  await cli(flatCwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(flatCwd, ["init", "--yes"]);
   await cli(flatCwd, ["add", "rule/no-secrets", "--yes"]);
   await fs.access(path.join(flatCwd, ".bob", "rules", "no-secrets.md"));
 });
@@ -581,15 +619,11 @@ test("bundled rules install as directories while single-file rules stay flat", a
 test("multiple registries resolve and install registry-qualified items", async () => {
   const cwd = await tempProject();
   const teamRegistryPath = await writeRuleRegistry(cwd, "team-registry", "team-rule", "# Team Rule\n");
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
-
-  const configPath = path.join(cwd, "bobster.json");
-  const config = await readJson(configPath);
-  config.registries = [
+  await writeTestGlobalConfig(cwd, [
     { name: "public", url: registryPath },
     { name: "team", url: teamRegistryPath },
-  ];
-  await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  ]);
+  await cli(cwd, ["init", "--yes"]);
 
   const list = await cli(cwd, ["list"]);
   assert.match(list.stdout, /public\/skill\/frontend-design/);
@@ -608,7 +642,7 @@ test("multiple registries resolve and install registry-qualified items", async (
 
 test("dry-run and JSON add output report planned writes without touching disk", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   const output = await cli(cwd, ["add", "skill/frontend-design", "--dry-run", "--json"]);
   const plan = JSON.parse(output.stdout);
@@ -623,7 +657,7 @@ test("dry-run and JSON add output report planned writes without touching disk", 
 
 test("learn alias installs a skill", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   await cli(cwd, ["learn", "frontend-design", "--yes"]);
 
@@ -632,7 +666,7 @@ test("learn alias installs a skill", async () => {
 
 test("watsonx Orchestrate skill is searchable and installable", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   const search = await cli(cwd, ["search", "wxo", "--registry", registryPath]);
   assert.match(search.stdout, /skill\/watsonx-orchestrate/);
@@ -648,7 +682,7 @@ test("watsonx Orchestrate skill is searchable and installable", async () => {
 
 test("catalog and search use discovery metadata", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
 
   const catalog = await cli(cwd, ["list", "--registry", registryPath]);
   assert.match(catalog.stdout, /Popular Topics/);
@@ -747,15 +781,11 @@ test("ambiguous items require registry-qualified names", async () => {
   const cwd = await tempProject();
   const publicRegistryPath = await writeRuleRegistry(cwd, "public-registry", "shared-rule", "# Public Rule\n");
   const teamRegistryPath = await writeRuleRegistry(cwd, "team-registry", "shared-rule", "# Team Rule\n");
-  await cli(cwd, ["init", "--registry", publicRegistryPath, "--yes"]);
-
-  const configPath = path.join(cwd, "bobster.json");
-  const config = await readJson(configPath);
-  config.registries = [
+  await writeTestGlobalConfig(cwd, [
     { name: "public", url: publicRegistryPath },
     { name: "team", url: teamRegistryPath },
-  ];
-  await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  ]);
+  await cli(cwd, ["init", "--yes"]);
 
   await assert.rejects(
     () => cli(cwd, ["add", "rule/shared-rule", "--yes"]),
@@ -782,7 +812,7 @@ test("GitHub blob registry URLs derive API fetch URLs", () => {
 
 test("installed item commands suggest close installed names for typos", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
   await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
 
   await assert.rejects(
@@ -817,7 +847,7 @@ test("show all prints every manifest file with headers", async () => {
 
 test("reinstall is idempotent and add without force refuses conflicts", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
   await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
 
   const second = await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
@@ -837,7 +867,7 @@ test("reinstall is idempotent and add without force refuses conflicts", async ()
 
 test("remove deletes tracked files and removes custom mode entries", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
   await cli(cwd, ["add", "skill/frontend-design", "--yes"]);
   await cli(cwd, ["add", "mode/grug-brained", "--yes"]);
 
@@ -853,7 +883,7 @@ test("remove deletes tracked files and removes custom mode entries", async () =>
 
 test("update repairs installed files from the configured registry", async () => {
   const cwd = await tempProject();
-  await cli(cwd, ["init", "--registry", registryPath, "--yes"]);
+  await cli(cwd, ["init", "--yes"]);
   await cli(cwd, ["add", "rule/no-secrets", "--yes"]);
 
   const rulePath = path.join(cwd, ".bob", "rules", "no-secrets.md");
@@ -872,7 +902,7 @@ test("bin entrypoint can run help and registry-backed search", async () => {
   const search = await execFileAsync(
     process.execPath,
     [binPath, "search", "security", "--registry", registryPath],
-    { cwd },
+    { cwd, env: testEnv(cwd) },
   );
   assert.match(search.stdout, /rule\/no-secrets/);
 });

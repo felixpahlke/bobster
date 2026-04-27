@@ -107,6 +107,7 @@ async function main(argv: string[], options: any = {}) {
     await runComplete(argv.slice(1), {
       completeIndex: options.completeIndex,
       cwd,
+      env: options.env || process.env,
       io,
     });
     return 0;
@@ -121,6 +122,7 @@ async function main(argv: string[], options: any = {}) {
     args: parsed.args,
     command: parsed.command,
     cwd,
+    env: options.env || process.env,
     flags: parsed.flags,
     io,
     theme,

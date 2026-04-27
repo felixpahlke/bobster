@@ -198,7 +198,9 @@ npm run registry:build
 mkdir -p /tmp/bobster-test
 cd /tmp/bobster-test
 
-node /path/to/bobster/dist/src/cli.js init --registry /path/to/bobster/registry/index.json --yes
+export BOBSTER_CONFIG=/tmp/bobster-test/bobster-config.json
+node /path/to/bobster/dist/src/cli.js registry add local /path/to/bobster/registry/index.json
+node /path/to/bobster/dist/src/cli.js init --yes
 node /path/to/bobster/dist/src/cli.js add skill/my-skill --yes
 node /path/to/bobster/dist/src/cli.js list --installed
 ```
@@ -221,4 +223,4 @@ For registry PRs, include:
 
 ## External Repositories
 
-For now, built-in registry items should include their installable files directly in this repository. Bobster can consume a different registry URL through `bobster.json`, but linking individual built-in registry items to files hosted in other repositories is future work.
+For now, built-in registry items should include their installable files directly in this repository. Bobster can consume different registry URLs through global registry config, but linking individual built-in registry items to files hosted in other repositories is future work.

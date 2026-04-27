@@ -1,6 +1,8 @@
 "use strict";
 
+const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
+const os = require("node:os");
 const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { fileURLToPath, pathToFileURL } = require("node:url");
@@ -8,6 +10,7 @@ const { promisify } = require("node:util");
 const { BUNDLED_REGISTRY_INDEX, DEFAULT_REGISTRY } = require("../constants");
 const { BobsterError } = require("../error");
 const { assertSafeRelativePath } = require("../fs/safe-path");
+const { parseSshGitRegistrySource } = require("./git-source");
 const { validateIndex } = require("./schemas");
 
 const execFileAsync = promisify(execFile);
@@ -25,6 +28,89 @@ function resolveLocalSource(source, cwd) {
     return fileURLToPath(source);
   }
   return path.isAbsolute(source) ? source : path.resolve(cwd, source);
+}
+
+function gitRegistryCacheRoot(env: any = process.env) {
+  const cacheHome = env.BOBSTER_CACHE || env.XDG_CACHE_HOME || path.join(env.HOME || os.homedir(), ".cache");
+  return path.join(cacheHome, "bobster", "git-registries");
+}
+
+function gitRegistryCachePath(sourceInfo, env) {
+  const hash = crypto.createHash("sha256").update(sourceInfo.remote).digest("hex").slice(0, 16);
+  return path.join(gitRegistryCacheRoot(env), `${sourceInfo.repoName}-${hash}.git`);
+}
+
+function gitSourceLabel(sourceInfo) {
+  return sourceInfo.remote;
+}
+
+async function pathExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function runGit(args, sourceInfo) {
+  try {
+    return await execFileAsync("git", args, {
+      maxBuffer: 50 * 1024 * 1024,
+      timeout: 120000,
+    });
+  } catch (error) {
+    const details = String(error.stderr || error.message || "").trim();
+    throw new BobsterError(`Could not access SSH registry ${gitSourceLabel(sourceInfo)}.${details ? `\n${details}` : ""}`);
+  }
+}
+
+async function ensureGitRegistryCache(sourceInfo, options: any = {}) {
+  const env = options.env || process.env;
+  const cachePath = gitRegistryCachePath(sourceInfo, env);
+
+  if (!(await pathExists(cachePath))) {
+    await fs.mkdir(path.dirname(cachePath), { recursive: true });
+    await runGit(
+      [
+        "clone",
+        "--bare",
+        "--filter=blob:none",
+        "--depth=1",
+        sourceInfo.remote,
+        cachePath,
+      ],
+      sourceInfo,
+    );
+  }
+
+  await runGit(["-C", cachePath, "fetch", "--depth=1", "origin", "HEAD"], sourceInfo);
+  const commit = (await runGit(["-C", cachePath, "rev-parse", "FETCH_HEAD"], sourceInfo)).stdout.trim();
+  return {
+    cachePath,
+    commit,
+    registryRoot: "registry",
+    source: sourceInfo,
+  };
+}
+
+function joinGitPath(...parts) {
+  return parts
+    .flatMap((part) => String(part || "").split("/"))
+    .filter(Boolean)
+    .join("/");
+}
+
+async function readGitRegistryBlob(gitRegistry, relativePath) {
+  const objectPath = joinGitPath(gitRegistry.registryRoot, relativePath);
+  const result = await runGit(
+    ["-C", gitRegistry.cachePath, "show", `${gitRegistry.commit}:${objectPath}`],
+    gitRegistry.source,
+  );
+  return {
+    text: result.stdout,
+    url: `${gitRegistry.source.remote}#${gitRegistry.commit}:${objectPath}`,
+  };
 }
 
 function githubBlobInfo(source) {
@@ -210,10 +296,23 @@ async function fetchHttpText(source) {
   };
 }
 
-async function readTextSource(source, cwd) {
+async function readTextSource(source, cwd, options: any = {}) {
+  const sshSource = parseSshGitRegistrySource(source);
+  if (sshSource) {
+    const gitRegistry = await ensureGitRegistryCache(sshSource, options);
+    const result = await readGitRegistryBlob(gitRegistry, "index.json");
+    return {
+      gitRegistry,
+      localPath: null,
+      text: result.text,
+      url: result.url,
+    };
+  }
+
   if (isHttpSource(source)) {
     const result = await fetchHttpText(source);
     return {
+      gitRegistry: null,
       localPath: null,
       text: result.text,
       url: result.url,
@@ -222,6 +321,7 @@ async function readTextSource(source, cwd) {
 
   const localPath = resolveLocalSource(source, cwd);
   return {
+    gitRegistry: null,
     localPath,
     text: await fs.readFile(localPath, "utf8"),
     url: pathToFileURL(localPath).href,
@@ -234,13 +334,13 @@ async function fetchRegistryIndex(registry: string, options: any = {}) {
   let usedFallback = false;
 
   try {
-    result = await readTextSource(registry, cwd);
+    result = await readTextSource(registry, cwd, options);
   } catch (error) {
     if (registry !== DEFAULT_REGISTRY) {
       throw error;
     }
 
-    result = await readTextSource(BUNDLED_REGISTRY_INDEX, cwd);
+    result = await readTextSource(BUNDLED_REGISTRY_INDEX, cwd, options);
     usedFallback = true;
   }
 
@@ -255,6 +355,7 @@ async function fetchRegistryIndex(registry: string, options: any = {}) {
   const localRegistryRoot = result.localPath ? path.dirname(result.localPath) : null;
 
   return {
+    gitRegistry: result.gitRegistry,
     index,
     localRegistryRoot,
     registry,
@@ -333,6 +434,17 @@ async function fetchRegistryFile(registryContext, item, file) {
     return {
       content: await fs.readFile(localPath, "utf8"),
       source: pathToFileURL(localPath).href,
+    };
+  }
+
+  if (sourceContext.gitRegistry) {
+    const result = await readGitRegistryBlob(
+      sourceContext.gitRegistry,
+      joinGitPath(item.path, file),
+    );
+    return {
+      content: result.text,
+      source: result.url,
     };
   }
 

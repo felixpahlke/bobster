@@ -439,9 +439,9 @@ function parsedRegistryPrefix(current) {
   };
 }
 
-async function registryItems(cwd, flags) {
-  const config = loadConfig(cwd, flags);
-  const registryContext = await fetchRegistryIndexes(config.registries, { cwd });
+async function registryItems(cwd, flags, env) {
+  const config = loadConfig(cwd, flags, { env });
+  const registryContext = await fetchRegistryIndexes(config.registries, { cwd, env });
   return registryContext.index.items;
 }
 
@@ -450,11 +450,11 @@ async function installedItems(cwd) {
   return lockfile.items || [];
 }
 
-async function completeName(command, cwd, parsed, current) {
+async function completeName(command, cwd, parsed, current, env) {
   const type = parsedType(parsed.flags);
 
   if (command === "add" || command === "info" || command === "show") {
-    const items = await registryItems(cwd, parsed.flags);
+    const items = await registryItems(cwd, parsed.flags, env);
     return itemSuggestions(items, {
       allowedTypes: ITEM_TYPES,
       current,
@@ -464,7 +464,7 @@ async function completeName(command, cwd, parsed, current) {
   }
 
   if (command === "learn") {
-    const items = await registryItems(cwd, { ...parsed.flags, type: "skill" });
+    const items = await registryItems(cwd, { ...parsed.flags, type: "skill" }, env);
     return itemSuggestions(items, {
       allowedTypes: ["skill"],
       current,
@@ -474,7 +474,7 @@ async function completeName(command, cwd, parsed, current) {
   }
 
   if (command === "list" && !parsed.flags.installed) {
-    const items = await registryItems(cwd, parsed.flags);
+    const items = await registryItems(cwd, parsed.flags, env);
     return topicSuggestions(items, current);
   }
 
@@ -534,7 +534,7 @@ async function completionSuggestions(rawWords, options: any = {}) {
     : parsed.command;
 
   if (parsed.args.length === 0 || (parsed.command === "registry" && parsed.args.length === 1)) {
-    return completeName(effectiveCommand, options.cwd || process.cwd(), parsed, current);
+    return completeName(effectiveCommand, options.cwd || process.cwd(), parsed, current, options.env);
   }
 
   return [];

@@ -14,7 +14,6 @@ const COMMAND_HELP = {
     description: "Create bobster.json and the target Bob asset folders.",
     options: [
       "--target <path>      Target folder to initialize. Defaults to .bob.",
-      "--registry <url>     Registry index URL or local index path.",
       "--yes               Apply without confirmation.",
       "--force             Overwrite conflicting bobster.json content.",
       "--dry-run           Show planned writes without changing files.",
@@ -27,7 +26,7 @@ const COMMAND_HELP = {
     options: [
       "--type <type>        Filter to skill, rule, or mode.",
       "--installed          List installed items from bobster-lock.json.",
-      "--registry <url>     Registry index URL or local index path.",
+      "--registry <name|url>  Registry name, index URL, or local index path.",
       "--json              Print JSON.",
     ],
   },
@@ -36,7 +35,7 @@ const COMMAND_HELP = {
     description: "Search names, topics, aliases, keywords, tags, and item types.",
     options: [
       "--type <type>        Filter to skill, rule, or mode.",
-      "--registry <url>     Registry index URL or local index path.",
+      "--registry <name|url>  Registry name, index URL, or local index path.",
       "--json              Print JSON.",
     ],
   },
@@ -45,7 +44,7 @@ const COMMAND_HELP = {
     description: "Show registry metadata, files, source, and install target.",
     options: [
       "--type <type>        Resolve an unqualified name as skill, rule, or mode.",
-      "--registry <url>     Registry index URL or local index path.",
+      "--registry <name|url>  Registry name, index URL, or local index path.",
       "--json              Print JSON.",
     ],
   },
@@ -56,7 +55,7 @@ const COMMAND_HELP = {
       "--type <type>        Resolve an unqualified name as skill, rule, or mode.",
       "--file <path>        Print one manifest-listed file.",
       "--all               Print every file listed by the item manifest.",
-      "--registry <url>     Registry index URL or local index path.",
+      "--registry <name|url>  Registry name, index URL, or local index path.",
       "--json              Print JSON.",
     ],
   },
@@ -102,7 +101,7 @@ const COMMAND_HELP = {
   },
   update: {
     usage: "bobster update [name] [options]",
-    description: "Reinstall installed items from the configured registry.",
+    description: "Reinstall installed items from the active registry.",
     options: [
       "--dry-run           Show planned writes without changing files.",
       "--yes               Apply without confirmation.",
@@ -120,13 +119,13 @@ const COMMAND_HELP = {
   },
   registry: {
     usage: "bobster registry <add|list|remove|doctor|build|validate> [options]",
-    description: "Manage configured registries or build the committed registry/index.json file.",
+    description: "Manage global registries or build the committed registry/index.json file.",
     options: [
-      "add <name> <url>    Add a registry index URL or local index path.",
-      "add ssh/git@...     Clone an SSH Git registry into .private-registries/.",
-      "list                List configured registries.",
-      "remove <name>       Remove a configured registry.",
-      "doctor [name]       Validate configured registry access and schema.",
+      "add <name> <url>    Add a global registry index URL or local index path.",
+      "add ssh/git@...     Add an SSH Git registry using the user's SSH key.",
+      "list                List global registries.",
+      "remove <name>       Remove a global registry.",
+      "doctor [name]       Validate global registry access and schema.",
       "--base-url <url>     Base URL to store in generated index.json.",
       "--check             Compare generated content with the committed index.",
       "--force             Replace an existing registry with registry add.",
@@ -154,7 +153,7 @@ const COMMANDS = [
 ];
 
 const COMMAND_FLAGS = {
-  init: ["--target", "--registry", "--yes", "--force", "--dry-run", "--json", "--help"],
+  init: ["--target", "--yes", "--force", "--dry-run", "--json", "--help"],
   list: ["--type", "--installed", "--registry", "--json", "--help"],
   search: ["--type", "--registry", "--json", "--help"],
   info: ["--type", "--registry", "--json", "--help"],
@@ -188,7 +187,7 @@ const COMMAND_OVERVIEW_GROUPS = [
     heading: "SETUP COMMANDS",
     commands: [
       ["completion", "Install or print shell completions"],
-      ["init", "Write bobster.json for custom paths or registries"],
+      ["init", "Write bobster.json for custom paths"],
     ],
   },
   {
@@ -201,9 +200,9 @@ const COMMAND_OVERVIEW_GROUPS = [
   {
     heading: "REGISTRY COMMANDS",
     commands: [
-      ["registry add", "Add a public or private registry"],
-      ["registry list", "List configured registries"],
-      ["registry doctor", "Check registry access and schema"],
+      ["registry add", "Add a global public or private registry"],
+      ["registry list", "List global registries"],
+      ["registry doctor", "Check global registry access and schema"],
       ["registry build", "Rebuild registry/index.json"],
       ["registry validate", "Validate registry manifests and files"],
     ],

@@ -34,7 +34,9 @@ function targetFileForMode(config) {
 
 function lockEntryForItem(config: any, registryContext: any, item: any, files: string[], extra: any = {}) {
   const sourceContext = contextForItem(registryContext, item);
-  const baseUrl = sourceContext.index.baseUrl || sourceContext.resolvedRegistry;
+  const baseUrl = sourceContext.gitRegistry
+    ? `${sourceContext.gitRegistry.source.remote}#${sourceContext.gitRegistry.commit}:registry`
+    : sourceContext.index.baseUrl || sourceContext.resolvedRegistry;
   return {
     type: item.type,
     name: item.name,

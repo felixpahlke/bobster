@@ -9,5 +9,5 @@
 - Public watsonx Orchestrate ADK skills were imported as public registry skills where public-safe; `wxo-builder` was consolidated into `watsonx-orchestrate/references/` instead of creating a duplicate wxO skill.
 - Internal skills should remain in `.private-registries/bobster-registry-internal` unless reviewed for public promotion.
 - Interactive `bobster add <bare-term>` now opens a picker when discovery search finds alternatives beyond an exact item name.
-- `bobster registry add ssh/git@host:owner/bobster-registry-name.git` now clones/uses `.private-registries/<repo>/registry/index.json` and infers the registry name.
+- `bobster registry add` now manages global registry config; SSH Git shorthands use a global partial Git cache and do not create project checkouts.
 - Interactive prompt Ctrl+C cancellation is normalized to Bobster cancellation errors instead of leaking readline stack traces.

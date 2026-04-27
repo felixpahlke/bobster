@@ -41,7 +41,7 @@ By default, Bobster installs into `.bob/`:
 
 Installed assets are tracked in `bobster-lock.json` so they can be listed, removed, and updated later.
 
-Use `bobster init` only when you want to write a `bobster.json` config, set a custom registry, or use a target folder other than `.bob/`.
+Use `bobster init` only when you want to write a `bobster.json` config for a target folder other than `.bob/` or custom project paths.
 
 ## Commands
 
@@ -59,16 +59,16 @@ CORE COMMANDS
 
 SETUP COMMANDS
   completion:         Install or print shell completions
-  init:               Write bobster.json for custom paths or registries
+  init:               Write bobster.json for custom paths
 
 ALIASES
   learn:              Install a skill
   forget:             Remove an installed item
 
 REGISTRY COMMANDS
-  registry add:       Add a public or private registry
-  registry list:      List configured registries
-  registry doctor:    Check registry access and schema
+  registry add:       Add a global public or private registry
+  registry list:      List global registries
+  registry doctor:    Check global registry access and schema
   registry build:     Rebuild registry/index.json
   registry validate:  Validate registry manifests and files
 ```
@@ -127,22 +127,12 @@ bobster completion zsh
 
 ## Config
 
-`bobster.json` controls the target Bob folder and registry indexes:
+`bobster.json` controls only project-local install paths and defaults:
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/felixpahlke/bobster/main/schema/bobster.schema.json",
   "target": ".bob",
-  "registries": [
-    {
-      "name": "public",
-      "url": "https://raw.githubusercontent.com/felixpahlke/bobster/main/registry/index.json"
-    },
-    {
-      "name": "internal",
-      "url": "https://github.example.com/team/bobster-registry/blob/main/registry/index.json"
-    }
-  ],
   "paths": {
     "skills": ".bob/skills",
     "rules": ".bob/rules",
@@ -157,7 +147,7 @@ bobster completion zsh
 
 Use `--target .agents` if a project stores agent assets somewhere else.
 
-The legacy single `registry` field is still supported for one-registry projects.
+Registry sources are global to the user and apply anywhere Bobster runs. By default Bobster uses the public registry. `bobster registry add` writes the global config at `~/.config/bobster/config.json`, or the path in `BOBSTER_CONFIG` when set.
 
 Add private or team registries with:
 
@@ -168,9 +158,9 @@ bobster registry doctor internal
 bobster add internal/rule/example-rule
 ```
 
-For private GitHub or GitHub Enterprise registries, Bobster derives the host from the URL and uses the local GitHub CLI login when authentication is needed. Run `gh auth login -h <host>` if `registry doctor` reports an authentication error.
+For private GitHub or GitHub Enterprise HTTPS registries, Bobster derives the host from the URL and uses the local GitHub CLI login when authentication is needed. Run `gh auth login -h <host>` if `registry doctor` reports an authentication error.
 
-SSH Git registry sources are cloned into `.private-registries/` and configured from the checked-out `registry/index.json`. For repositories named `bobster-registry-<name>`, Bobster infers `<name>` as the registry name.
+SSH Git registry shorthands stay SSH-backed and use the user's configured Git SSH key or agent. Bobster keeps a global partial Git cache under `~/.cache/bobster/git-registries/`, fetches the current remote `HEAD` before reading the registry, and reads only `registry/index.json` plus selected item files from that commit. No registry checkout is created in the project. For repositories named `bobster-registry-<name>`, Bobster infers `<name>` as the registry name.
 
 ## Private Registries
 
@@ -215,7 +205,7 @@ Each item manifest lists the files that belong to the item:
 
 `origin` is optional. Use it for private or migrated assets when maintainers need to know where an item originally came from. Remove or replace private origin metadata before promoting content into a public registry.
 
-Maintain private registry clones outside this public repository, or place them under `.private-registries/` for local agent workflows. That folder is ignored and must not be committed.
+Do not commit private registry clones or private registry URLs to this public repository.
 
 ## Develop Locally
 

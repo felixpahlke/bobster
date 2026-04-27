@@ -24,7 +24,7 @@ async function runRemove(context) {
     throw new BobsterError("Usage: bobster remove <name>");
   }
 
-  const config = loadConfig(cwd, flags);
+  const config = loadConfig(cwd, flags, { env: context.env });
   const lockfile = await readLockfile(cwd);
   const item = await resolveInstalledItemForCommand(context, lockfile, name, {
     message: "Did you mean one of these? Select an item to remove",
